@@ -1,8 +1,5 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-
 import { Navbar } from "@/components/common/Navbar";
+import { Sidebar } from "@/components/common/Sidebar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,13 +24,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background font-sans`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background font-sans halo`}
         suppressHydrationWarning
       >
+        <Sidebar />
         <Navbar />
-        <main className="flex-1">
-          {children}
-        </main>
+        <div className="flex-1 lg:pl-20 transition-all duration-300">
+          <main className="min-h-screen">
+            {children}
+          </main>
+        </div>
       </body>
     </html>
   );

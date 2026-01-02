@@ -33,40 +33,49 @@ export default async function Home() {
   return (
     <div className="relative min-h-screen pb-20" suppressHydrationWarning>
       {/* Hero Section */}
-      <div className="relative h-[85vh] w-full overflow-hidden">
+      <div className="relative h-[80vh] w-full overflow-hidden">
         <div className="absolute inset-0 z-0">
           {featured ? (
             <div
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-1000 scale-105"
               style={{ backgroundImage: `url(${featured.backdrop_path?.startsWith("http") ? featured.backdrop_path : `https://image.tmdb.org/t/p/original${featured.backdrop_path}`})` }}
             >
-              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-r from-background via-background/20 to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background" />
+              {/* Complex Gradients for Premium Look */}
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-background via-background/40 to-transparent" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,transparent,rgba(0,0,0,0.5))]" />
             </div>
           ) : (
             <div className="absolute inset-0 bg-muted" />
           )}
         </div>
 
-        <div className="relative z-30 flex h-full flex-col justify-end px-4 pb-20 md:px-12 lg:w-1/2">
-          <h1 className="mb-4 text-4xl font-extrabold tracking-tight md:text-6xl lg:text-7xl">
-            {featured?.title || featured?.name || "Welcome to CloudAnime"}
-          </h1>
-          <p className="mb-6 line-clamp-3 text-lg text-muted-foreground md:text-xl">
-            {featured?.overview || "Discover the best movies and TV shows completely free."}
-          </p>
-          <div className="flex gap-4">
-            <Link href={`https://vidsrc.xyz/embed/${featured?.media_type || 'movie'}/${featured?.id}`} target="_blank">
-              <Button size="lg" className="gap-2 text-base font-semibold">
-                <Play className="h-5 w-5 fill-current" /> Watch Now
-              </Button>
-            </Link>
-            <Link href={`/${featured?.media_type || 'movie'}/${featured?.id}`}>
-              <Button size="lg" variant="outline" className="gap-2 text-base font-semibold">
-                <Info className="h-5 w-5" /> More Info
-              </Button>
-            </Link>
+        <div className="container relative z-30 flex h-full flex-col justify-end pb-24">
+          <div className="max-w-2xl space-y-6">
+            <div className="flex items-center gap-2">
+              <span className="bg-primary/20 text-primary border border-primary/30 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest backdrop-blur-md">
+                Featured
+              </span>
+              <span className="text-white/60 text-xs font-bold uppercase tracking-widest">{featured?.release_date?.split('-')[0]}</span>
+            </div>
+            <h1 className="text-5xl font-black tracking-tighter md:text-7xl lg:text-8xl text-white drop-shadow-2xl">
+              {featured?.title || featured?.name || "Welcome to CloudAnime"}
+            </h1>
+            <p className="line-clamp-3 text-lg text-white/70 md:text-xl font-medium max-w-xl leading-relaxed">
+              {featured?.overview || "Discover the best movies and TV shows completely free."}
+            </p>
+            <div className="flex flex-wrap gap-4 pt-2">
+              <Link href={`https://vidsrc.xyz/embed/${featured?.media_type || 'movie'}/${featured?.id}`} target="_blank">
+                <Button size="lg" className="h-14 px-8 gap-3 text-lg font-bold rounded-full shadow-[0_0_20px_rgba(97,82,223,0.4)] hover:shadow-[0_0_30px_rgba(97,82,223,0.6)] transition-all">
+                  <Play className="h-6 w-6 fill-current" /> Watch Now
+                </Button>
+              </Link>
+              <Link href={`/${featured?.media_type || 'movie'}/${featured?.id}`}>
+                <Button size="lg" variant="outline" className="h-14 px-8 gap-3 text-lg font-bold rounded-full border-white/20 bg-white/5 backdrop-blur-md hover:bg-white/10 transition-all">
+                  <Info className="h-6 w-6" /> Details
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>

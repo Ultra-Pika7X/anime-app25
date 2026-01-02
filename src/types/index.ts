@@ -9,6 +9,8 @@ export interface MediaItem {
     release_date?: string;
     first_air_date?: string;
     media_type: "movie" | "tv" | "person";
+    genres?: { name: string }[];
+    runtime?: number;
 }
 
 export interface MediaResponse {

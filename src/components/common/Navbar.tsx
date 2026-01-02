@@ -18,53 +18,55 @@ export function Navbar() {
     };
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="container flex h-14 max-w-screen-2xl items-center justify-between">
-                <div className="mr-4 flex">
-                    <Link href="/" className="mr-6 flex items-center space-x-2">
-                        <span className="hidden font-bold sm:inline-block text-xl tracking-tight text-primary">
+        <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/40">
+            <div className="container flex h-16 items-center justify-between">
+                <div className="flex items-center gap-8">
+                    <Link href="/" className="flex items-center space-x-2">
+                        <span className="font-bold text-2xl tracking-tighter text-primary">
                             CloudAnime
                         </span>
                     </Link>
-                    <nav className="flex items-center gap-6 text-sm font-medium">
+                    <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
                         <Link
                             href="/"
-                            className="transition-colors hover:text-foreground/80 text-foreground/60"
+                            className="transition-colors hover:text-primary text-foreground/70"
                         >
                             Movies
                         </Link>
                         <Link
                             href="/"
-                            className="transition-colors hover:text-foreground/80 text-foreground/60"
+                            className="transition-colors hover:text-primary text-foreground/70"
                         >
                             TV Shows
                         </Link>
                         <Link
                             href="/"
-                            className="transition-colors hover:text-foreground/80 text-foreground/60"
+                            className="transition-colors hover:text-primary text-foreground/70"
                         >
                             New & Popular
                         </Link>
                     </nav>
                 </div>
-                <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-                    <div className="w-full flex-1 md:w-auto md:flex-none">
+                <div className="flex flex-1 items-center justify-end space-x-4">
+                    <div className="w-full max-w-sm hidden sm:block">
                         <form onSubmit={handleSearch} className="relative">
-                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <input
-                                placeholder="Search..."
+                                placeholder="Search anime..."
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
-                                className="flex h-9 w-full rounded-md border border-input bg-background/50 px-3 py-1 pl-8 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:w-[200px] lg:w-[300px]"
+                                className="flex h-10 w-full rounded-full border border-border bg-background/20 px-4 py-1 pl-10 text-sm shadow-sm transition-all placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50"
                             />
                         </form>
                     </div>
-                    <Button variant="ghost" size="icon">
-                        <Bell className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon">
-                        <User className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/10">
+                            <Bell className="h-5 w-5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/10">
+                            <User className="h-5 w-5" />
+                        </Button>
+                    </div>
                 </div>
             </div>
         </header>

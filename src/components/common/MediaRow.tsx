@@ -31,45 +31,46 @@ export function MediaRow({ title, items, type }: MediaRowProps) {
     if (!items || items.length === 0) return null;
 
     return (
-        <div className="space-y-2 py-6">
-            <div className="flex items-center justify-between px-4 md:px-8">
-                <h2 className="text-xl font-semibold tracking-tight text-foreground md:text-2xl">
+        <div className="space-y-4 py-8">
+            <div className="flex items-center justify-between px-6 md:px-12">
+                <h2 className="text-2xl font-black tracking-tighter text-white">
                     {title}
                 </h2>
+                <div className="h-px flex-1 bg-white/5 mx-6 hidden md:block" />
             </div>
 
             <div className="group relative">
-                <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center justify-center bg-gradient-to-r from-background to-transparent px-2 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0 pointer-events-none">
+                <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center justify-center bg-gradient-to-r from-background via-background/60 to-transparent px-4 opacity-0 transition-all duration-300 group-hover:opacity-100 disabled:opacity-0 pointer-events-none">
                     <Button
-                        variant="ghost"
+                        variant="outline"
                         size="icon"
-                        className="h-full rounded-none hover:bg-transparent pointer-events-auto"
+                        className="h-12 w-12 rounded-full border-white/10 bg-black/40 backdrop-blur-md text-white hover:bg-white/10 hover:border-white/20 transition-all pointer-events-auto"
                         onClick={() => scroll("left")}
                     >
-                        <ChevronLeft className="h-8 w-8" />
+                        <ChevronLeft className="h-6 w-6" />
                     </Button>
                 </div>
 
                 <div
                     ref={rowRef}
-                    className="flex gap-4 overflow-x-auto px-4 pb-4 pt-2 scrollbar-hide md:px-8"
+                    className="flex gap-6 overflow-x-auto px-6 pb-6 pt-2 scrollbar-hide md:px-12"
                     style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                 >
                     {items.map((item) => (
-                        <div key={item.id} className="w-[150px] flex-none md:w-[200px]">
+                        <div key={item.id} className="w-[160px] flex-none md:w-[220px]">
                             <MediaCard item={item} type={type || item.media_type as "movie" | "tv"} />
                         </div>
                     ))}
                 </div>
 
-                <div className="absolute right-0 top-0 bottom-0 z-10 flex items-center justify-center bg-gradient-to-l from-background to-transparent px-2 opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none">
+                <div className="absolute right-0 top-0 bottom-0 z-10 flex items-center justify-center bg-gradient-to-l from-background via-background/60 to-transparent px-4 opacity-0 transition-all duration-300 group-hover:opacity-100 pointer-events-none">
                     <Button
-                        variant="ghost"
+                        variant="outline"
                         size="icon"
-                        className="h-full rounded-none hover:bg-transparent pointer-events-auto"
+                        className="h-12 w-12 rounded-full border-white/10 bg-black/40 backdrop-blur-md text-white hover:bg-white/10 hover:border-white/20 transition-all pointer-events-auto"
                         onClick={() => scroll("right")}
                     >
-                        <ChevronRight className="h-8 w-8" />
+                        <ChevronRight className="h-6 w-6" />
                     </Button>
                 </div>
             </div>
