@@ -1,50 +1,29 @@
-import { getPopularIMDb, getPopularTVIMDb, searchIMDb, getIMDbDetails } from "./imdb";
+import { jikan } from "./jikan";
 
 export type MediaType = "movie" | "tv";
 
 /**
- * Metadata provider that now uses IMDb Scraper.
+ * Metadata provider that now uses Jikan (MyAnimeList) API to enforce Anime-only content.
  * We keep the "tmdb" object name to avoid breaking imports in the rest of the app.
  */
 export const tmdb = {
     getTrending: async (type: MediaType, page = 1) => {
-        // IMDb scraper doesn't support pagination or distinct trending vs popular in the current implementation
-        if (type === 'tv') {
-            const results = await getPopularTVIMDb();
-            return { results };
-        }
-        const results = await getPopularIMDb();
-        return { results };
+        return jikan.getTrendingAnime(type, page);
     },
 
     getTopRated: async (type: MediaType, page = 1) => {
-        // Fallback to popular as we don't have a specific top rated scraper yet
-        if (type === 'tv') {
-            const results = await getPopularTVIMDb();
-            return { results };
-        }
-        const results = await getPopularIMDb();
-        return { results };
+        return jikan.getTopRatedAnime(type, page);
     },
 
     getPopular: async (type: MediaType, page = 1) => {
-        if (type === 'tv') {
-            const results = await getPopularTVIMDb();
-            return { results };
-        }
-        const results = await getPopularIMDb();
-        return { results };
+        return jikan.getPopularAnime(type, page);
     },
 
     getDetails: async (type: MediaType, id: string | number) => {
-        // IMDb IDs are strings (tt12345). If we get a number, we might be in trouble if we don't have a mapping.
-        // But the previous implementation seemed to handle mixed types.
-        // We'll cast to string and hope it's an IMDb ID or compatible.
-        return getIMDbDetails(id.toString());
+        return jikan.getAnimeDetails(id);
     },
 
     search: async (query: string, page = 1) => {
-        const results = await searchIMDb(query);
-        return { results };
+        return jikan.searchAnime(query, page);
     },
 };
