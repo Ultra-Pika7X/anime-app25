@@ -64,18 +64,32 @@ export function Navbar() {
                     </Button>
 
                     {user ? (
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 border border-primary/30 text-primary font-bold shadow-[0_0_15px_rgba(97,82,223,0.2)]">
+                        <div className="relative group/profile">
+                            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 border border-primary/30 text-primary font-bold shadow-[0_0_15px_rgba(97,82,223,0.2)] hover:bg-primary/30 transition-all">
                                 {user.displayName ? user.displayName[0].toUpperCase() : user.email ? user.email[0].toUpperCase() : "U"}
+                            </button>
+
+                            {/* Dropdown Menu */}
+                            <div className="absolute right-0 mt-2 w-56 origin-top-right rounded-2xl border border-white/10 bg-background/95 backdrop-blur-xl p-2 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                <div className="px-3 py-2 border-b border-white/5 mb-1">
+                                    <p className="text-xs font-medium text-muted-foreground">Signed in as</p>
+                                    <p className="text-sm font-bold truncate text-white">{user.email}</p>
+                                </div>
+                                <Link
+                                    href="/settings"
+                                    className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-white/70 hover:text-white hover:bg-white/5 transition-all"
+                                >
+                                    <User className="h-4 w-4" />
+                                    Settings
+                                </Link>
+                                <button
+                                    onClick={() => logout()}
+                                    className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all text-left"
+                                >
+                                    <LogOut className="h-4 w-4" />
+                                    Logout
+                                </button>
                             </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => logout()}
-                                className="hidden lg:flex rounded-full border-white/10 bg-white/5 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 transition-all text-xs font-bold"
-                            >
-                                <LogOut className="mr-2 h-3.5 w-3.5" /> Logout
-                            </Button>
                         </div>
                     ) : (
                         <Link href="/login">
