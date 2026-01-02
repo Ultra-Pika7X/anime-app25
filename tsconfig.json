@@ -38,6 +38,8 @@
   ],
   "exclude": [
     "node_modules",
-    "seanime-main"
+    "seanime-main",
+    "**/seanime-main",
+    "**/*.go"
   ]
 }

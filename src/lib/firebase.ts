@@ -13,8 +13,20 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
-const db = getFirestore(app);
+let app;
+let auth;
+let db;
+
+try {
+    if (firebaseConfig.apiKey) {
+        app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+        auth = getAuth(app);
+        db = getFirestore(app);
+    } else {
+        console.warn("Firebase config missing, skipping initialization.");
+    }
+} catch (error) {
+    console.error("Firebase initialization error:", error);
+}
 
 export { app, auth, db };
