@@ -1,14 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Bell, User } from "lucide-react";
+import { Search, Bell, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 
 export function Navbar() {
-    const router = useRouter();
+    const [isScrolled, setIsScrolled] = useState(false);
     const [query, setQuery] = useState("");
+    const router = useRouter();
+    const { user, logout } = useAuth();
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 0);
+        };
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -18,55 +30,60 @@ export function Navbar() {
     };
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/40">
-            <div className="container flex h-16 items-center justify-between">
+        <header
+            className={cn(
+                "fixed top-0 z-50 w-full transition-all duration-300 h-16 border-b border-white/5",
+                isScrolled ? "bg-background/80 backdrop-blur-2xl" : "bg-transparent"
+            )}
+        >
+            <div className="container flex h-full items-center justify-between gap-4 px-4 md:px-8">
                 <div className="flex items-center gap-8">
-                    <Link href="/" className="flex items-center space-x-2">
-                        <span className="font-bold text-2xl tracking-tighter text-primary">
+                    <Link href="/" className="flex items-center gap-2">
+                        <span className="text-2xl font-black tracking-tighter text-primary">
                             CloudAnime
                         </span>
                     </Link>
-                    <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-                        <Link
-                            href="/"
-                            className="transition-colors hover:text-primary text-foreground/70"
-                        >
-                            Movies
-                        </Link>
-                        <Link
-                            href="/"
-                            className="transition-colors hover:text-primary text-foreground/70"
-                        >
-                            TV Shows
-                        </Link>
-                        <Link
-                            href="/"
-                            className="transition-colors hover:text-primary text-foreground/70"
-                        >
-                            New & Popular
-                        </Link>
-                    </nav>
                 </div>
-                <div className="flex flex-1 items-center justify-end space-x-4">
-                    <div className="w-full max-w-sm hidden sm:block">
-                        <form onSubmit={handleSearch} className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <input
-                                placeholder="Search anime..."
-                                value={query}
-                                onChange={(e) => setQuery(e.target.value)}
-                                className="flex h-10 w-full rounded-full border border-border bg-background/20 px-4 py-1 pl-10 text-sm shadow-sm transition-all placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50"
-                            />
-                        </form>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/10">
-                            <Bell className="h-5 w-5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="rounded-full hover:bg-white/10">
-                            <User className="h-5 w-5" />
-                        </Button>
-                    </div>
+
+                <div className="flex flex-1 items-center justify-center max-w-xl">
+                    <form onSubmit={handleSearch} className="relative w-full group">
+                        <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                        <input
+                            type="text"
+                            placeholder="Search anime..."
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            className="h-10 w-full rounded-full border border-white/10 bg-white/5 pl-11 pr-4 text-sm text-white placeholder:text-muted-foreground focus:border-primary/50 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+                        />
+                    </form>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <Button variant="ghost" size="icon" className="hidden md:flex rounded-full text-white/70 hover:bg-white/10 hover:text-white">
+                        <Bell className="h-5 w-5" />
+                    </Button>
+
+                    {user ? (
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 border border-primary/30 text-primary font-bold shadow-[0_0_15px_rgba(97,82,223,0.2)]">
+                                {user.displayName ? user.displayName[0].toUpperCase() : user.email ? user.email[0].toUpperCase() : "U"}
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => logout()}
+                                className="hidden lg:flex rounded-full border-white/10 bg-white/5 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 transition-all text-xs font-bold"
+                            >
+                                <LogOut className="mr-2 h-3.5 w-3.5" /> Logout
+                            </Button>
+                        </div>
+                    ) : (
+                        <Link href="/login">
+                            <Button size="sm" className="rounded-full bg-primary px-6 font-bold shadow-[0_0_20px_rgba(97,82,223,0.3)] hover:shadow-[0_0_30px_rgba(97,82,223,0.5)] transition-all">
+                                Login
+                            </Button>
+                        </Link>
+                    )}
                 </div>
             </div>
         </header>
