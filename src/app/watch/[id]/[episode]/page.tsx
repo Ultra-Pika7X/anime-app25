@@ -110,38 +110,25 @@ export default function WatchPage() {
         );
     }
 
-    // Extract HLS Source
-    const hlsSource = streamData?.sources?.find(s => s.quality === "default" || s.quality === "auto")?.url
-        || streamData?.sources?.[0]?.url
-        || null;
+    {/* Player Container */ }
+    <AnimePlayer
+        sources={streamData?.sources || null}
+        intro={op ? { start: op.startTime, end: op.endTime } : undefined}
+        outro={ed ? { start: ed.startTime, end: ed.endTime } : undefined}
+        autoPlay
+        malId={id}
+        episodeNumber={epNum}
+    />
 
-    // Extract Skip Times
-    const op = streamData?.skipTimes?.results.find(r => r.skipType === "op")?.interval;
-    const ed = streamData?.skipTimes?.results.find(r => r.skipType === "ed")?.interval;
-
-    return (
-        <div className="min-h-screen bg-black pt-20 px-4 md:px-8">
-            <div className="max-w-7xl mx-auto space-y-6">
-
-                {/* Player Container */}
-                <AnimePlayer
-                    source={hlsSource}
-                    intro={op ? { start: op.startTime, end: op.endTime } : undefined}
-                    outro={ed ? { start: ed.startTime, end: ed.endTime } : undefined}
-                    autoPlay
-                    malId={id}
-                    episodeNumber={epNum}
-                />
-
-                {/* Episode Info / Navigation (Basic) */}
-                <div className="flex justify-between items-center text-white">
-                    <div>
-                        <h1 className="text-2xl font-bold">Episode {epNum}</h1>
-                    </div>
-                    {/* TODO: Next/Prev Buttons */}
-                </div>
-
-            </div>
+    {/* Episode Info / Navigation (Basic) */ }
+    <div className="flex justify-between items-center text-white">
+        <div>
+            <h1 className="text-2xl font-bold">Episode {epNum}</h1>
         </div>
+        {/* TODO: Next/Prev Buttons */}
+    </div>
+
+            </div >
+        </div >
     );
 }
