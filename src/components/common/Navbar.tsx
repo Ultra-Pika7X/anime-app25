@@ -11,6 +11,7 @@ import { useAuth } from "@/context/AuthContext";
 export function Navbar() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [query, setQuery] = useState("");
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const router = useRouter();
     const { user, logout } = useAuth();
 
@@ -64,32 +65,57 @@ export function Navbar() {
                     </Button>
 
                     {user ? (
-                        <div className="relative group/profile">
-                            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 border border-primary/30 text-primary font-bold shadow-[0_0_15px_rgba(97,82,223,0.2)] hover:bg-primary/30 transition-all">
-                                {user.displayName ? user.displayName[0].toUpperCase() : user.email ? user.email[0].toUpperCase() : "U"}
+                        <div className="relative">
+                            <button
+                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                className={cn(
+                                    "flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-200",
+                                    isDropdownOpen
+                                        ? "bg-primary text-white border-primary shadow-[0_0_15px_rgba(97,82,223,0.5)]"
+                                        : "bg-white/10 text-white hover:bg-white/20 border-white/10 hover:border-white/20"
+                                )}
+                            >
+                                <span className="font-bold text-sm">
+                                    {user.displayName ? user.displayName[0].toUpperCase() : user.email ? user.email[0].toUpperCase() : "U"}
+                                </span>
                             </button>
 
                             {/* Dropdown Menu */}
-                            <div className="absolute right-0 mt-2 w-56 origin-top-right rounded-2xl border border-white/10 bg-background/95 backdrop-blur-xl p-2 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                                <div className="px-3 py-2 border-b border-white/5 mb-1">
-                                    <p className="text-xs font-medium text-muted-foreground">Signed in as</p>
-                                    <p className="text-sm font-bold truncate text-white">{user.email}</p>
-                                </div>
-                                <Link
-                                    href="/settings"
-                                    className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-white/70 hover:text-white hover:bg-white/5 transition-all"
-                                >
-                                    <User className="h-4 w-4" />
-                                    Settings
-                                </Link>
-                                <button
-                                    onClick={() => logout()}
-                                    className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all text-left"
-                                >
-                                    <LogOut className="h-4 w-4" />
-                                    Logout
-                                </button>
-                            </div>
+                            {isDropdownOpen && (
+                                <>
+                                    <div
+                                        className="fixed inset-0 z-40"
+                                        onClick={() => setIsDropdownOpen(false)}
+                                    />
+                                    <div className="absolute right-0 mt-3 w-60 origin-top-right rounded-2xl border border-white/10 bg-[#0a0a0a]/95 backdrop-blur-2xl p-2 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-200">
+                                        <div className="px-3 py-3 border-b border-white/5 mb-1">
+                                            <p className="text-xs font-medium text-muted-foreground mb-1">Signed in as</p>
+                                            <p className="text-sm font-bold truncate text-white">{user.displayName || "User"}</p>
+                                            <p className="text-xs text-white/50 truncate">{user.email}</p>
+                                        </div>
+                                        <div className="mt-1 space-y-1">
+                                            <Link
+                                                href="/settings"
+                                                onClick={() => setIsDropdownOpen(false)}
+                                                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-all"
+                                            >
+                                                <User className="h-4 w-4" />
+                                                Settings
+                                            </Link>
+                                            <button
+                                                onClick={() => {
+                                                    logout();
+                                                    setIsDropdownOpen(false);
+                                                }}
+                                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all text-left"
+                                            >
+                                                <LogOut className="h-4 w-4" />
+                                                Logout
+                                            </button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     ) : (
                         <Link href="/login">

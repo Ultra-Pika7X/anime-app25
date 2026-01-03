@@ -33,11 +33,11 @@ export default async function Home() {
   return (
     <div className="relative min-h-screen pb-20" suppressHydrationWarning>
       {/* Hero Section */}
-      <div className="relative h-[80vh] w-full overflow-hidden">
+      <div className="relative h-[70vh] w-full overflow-hidden">
         <div className="absolute inset-0 z-0">
           {featured ? (
             <div
-              className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-1000 scale-105"
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-transform duration-1000"
               style={{ backgroundImage: `url(${featured.backdrop_path?.startsWith("http") ? featured.backdrop_path : `https://image.tmdb.org/t/p/original${featured.backdrop_path}`})` }}
             >
               {/* Complex Gradients for Premium Look */}
@@ -50,29 +50,34 @@ export default async function Home() {
           )}
         </div>
 
-        <div className="container relative z-30 flex h-full flex-col justify-end pb-24">
-          <div className="max-w-2xl space-y-6">
-            <div className="flex items-center gap-2">
-              <span className="bg-primary/20 text-primary border border-primary/30 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest backdrop-blur-md">
+        <div className="container relative z-30 flex h-full flex-col justify-center pt-20 pb-12">
+          <div className="max-w-3xl space-y-5">
+            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+              <span className="bg-primary/20 text-primary border border-primary/30 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest backdrop-blur-md">
                 Featured
               </span>
               <span className="text-white/60 text-xs font-bold uppercase tracking-widest">{featured?.release_date?.split('-')[0]}</span>
+              <span className="text-white/60 text-xs font-bold uppercase tracking-widest">•</span>
+              <span className="text-white/60 text-xs font-bold uppercase tracking-widest">Anime</span>
             </div>
-            <h1 className="text-5xl font-black tracking-tighter md:text-7xl lg:text-8xl text-white drop-shadow-2xl">
+
+            <h1 className="text-4xl font-black tracking-tighter md:text-5xl lg:text-6xl text-white drop-shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
               {featured?.title || featured?.name || "Welcome to CloudAnime"}
             </h1>
-            <p className="line-clamp-3 text-lg text-white/70 md:text-xl font-medium max-w-xl leading-relaxed">
+
+            <p className="line-clamp-3 text-base text-white/70 md:text-lg font-medium max-w-2xl leading-relaxed animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
               {featured?.overview || "Discover the best movies and TV shows completely free."}
             </p>
-            <div className="flex flex-wrap gap-4 pt-2">
+
+            <div className="flex flex-wrap gap-3 pt-2 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500">
               <Link href={`https://vidsrc.xyz/embed/${featured?.media_type || 'movie'}/${featured?.id}`} target="_blank">
-                <Button size="lg" className="h-14 px-8 gap-3 text-lg font-bold rounded-full shadow-[0_0_20px_rgba(97,82,223,0.4)] hover:shadow-[0_0_30px_rgba(97,82,223,0.6)] transition-all">
-                  <Play className="h-6 w-6 fill-current" /> Watch Now
+                <Button size="lg" className="h-12 px-6 gap-2 text-base font-bold rounded-full shadow-[0_0_20px_rgba(97,82,223,0.4)] hover:shadow-[0_0_30px_rgba(97,82,223,0.6)] transition-all">
+                  <Play className="h-5 w-5 fill-current" /> Watch Now
                 </Button>
               </Link>
               <Link href={`/${featured?.media_type || 'movie'}/${featured?.id}`}>
-                <Button size="lg" variant="outline" className="h-14 px-8 gap-3 text-lg font-bold rounded-full border-white/20 bg-white/5 backdrop-blur-md hover:bg-white/10 transition-all">
-                  <Info className="h-6 w-6" /> Details
+                <Button size="lg" variant="outline" className="h-12 px-6 gap-2 text-base font-bold rounded-full border-white/20 bg-white/5 backdrop-blur-md hover:bg-white/10 transition-all">
+                  <Info className="h-5 w-5" /> Details
                 </Button>
               </Link>
             </div>
@@ -81,12 +86,12 @@ export default async function Home() {
       </div>
 
       {/* Rows */}
-      <div className="relative z-20 -mt-32 space-y-8 pl-4 md:pl-0">
+      <div className="relative z-20 -mt-10 space-y-10 pl-4 md:pl-0">
         <ContinueWatchingRow />
-        <MediaRow title="Trending Anime Movies" items={trendingMovies.results} type="movie" />
-        <MediaRow title="Trending Anime Series" items={trendingTv.results} type="tv" />
-        <MediaRow title="Top Rated Anime Movies" items={topRatedMovies.results} type="movie" />
-        <MediaRow title="Popular Anime Movies" items={popularMovies.results} type="movie" />
+        <MediaRow title="Trending Movies" items={trendingMovies.results} type="movie" />
+        <MediaRow title="Trending Series" items={trendingTv.results} type="tv" />
+        <MediaRow title="Top Rated" items={topRatedMovies.results} type="movie" />
+        <MediaRow title="Popular Now" items={popularMovies.results} type="movie" />
       </div>
     </div>
   );
