@@ -13,9 +13,9 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-let app;
-let auth;
-let db;
+let app: any;
+let auth: any;
+let db: any;
 
 try {
     if (firebaseConfig.apiKey) {

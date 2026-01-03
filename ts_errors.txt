@@ -1,0 +1,14 @@
+next.config.ts(27,3): error TS2353: Object literal may only specify known properties, and 'eslint' does not exist in type 'NextConfig'.
+src/app/api/anime/episode/route.ts(6,29): error TS2339: Property 'Gogoanime' does not exist on type '{ Hianime: typeof Hianime; AnimePahe: typeof AnimePahe; AnimeKai: typeof AnimeKai; KickAssAnime: typeof KickAssAnime; AnimeSaturn: typeof AnimeSaturn; AnimeUnity: typeof AnimeUnity; }'.
+src/app/api/anime/source/route.ts(5,29): error TS2339: Property 'Gogoanime' does not exist on type '{ Hianime: typeof Hianime; AnimePahe: typeof AnimePahe; AnimeKai: typeof AnimeKai; KickAssAnime: typeof KickAssAnime; AnimeSaturn: typeof AnimeSaturn; AnimeUnity: typeof AnimeUnity; }'.
+src/app/login/page.tsx(7,10): error TS7034: Variable 'auth' implicitly has type 'any' in some locations where its type cannot be determined.
+src/app/login/page.tsx(24,46): error TS7005: Variable 'auth' implicitly has an 'any' type.
+src/app/signup/page.tsx(7,10): error TS7034: Variable 'auth' implicitly has type 'any' in some locations where its type cannot be determined.
+src/app/signup/page.tsx(25,73): error TS7005: Variable 'auth' implicitly has an 'any' type.
+src/components/player/AnimePlayer.tsx(5,23): error TS2724: '"@vidstack/react"' has no exported member named 'MediaProvider'. Did you mean 'useMediaProvider'?
+src/components/player/AnimePlayer.tsx(5,38): error TS2305: Module '"@vidstack/react"' has no exported member 'Track'.
+src/components/player/AnimePlayer.tsx(5,50): error TS2305: Module '"@vidstack/react"' has no exported member 'MediaPlayerInstance'.
+src/components/player/AnimePlayer.tsx(6,56): error TS2307: Cannot find module '@vidstack/react/player/layouts/default' or its corresponding type declarations.
+src/context/AuthContext.tsx(9,10): error TS7034: Variable 'auth' implicitly has type 'any' in some locations where its type cannot be determined.
+src/context/AuthContext.tsx(28,14): error TS7005: Variable 'auth' implicitly has an 'any' type.
+src/context/AuthContext.tsx(44,17): error TS7005: Variable 'auth' implicitly has an 'any' type.

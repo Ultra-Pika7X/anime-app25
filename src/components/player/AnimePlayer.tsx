@@ -67,7 +67,7 @@ export function AnimePlayer({ source, subtitles, intro, outro, className, autoPl
                 <MediaProvider>
                     {subtitles?.map((sub, i) => (
                         <Track
-                            key={i}
+                            key={String(i)}
                             src={sub.url}
                             kind="subtitles"
                             label={sub.label}

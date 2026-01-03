@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { ANIME, META } from '@consumet/extensions';
 
-const gogoanime = new ANIME.Gogoanime();
+const hianime = new ANIME.Hianime();
 const anilist = new META.Anilist();
 
 export async function GET(request: Request) {

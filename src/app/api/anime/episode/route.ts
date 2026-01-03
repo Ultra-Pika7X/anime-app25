@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { ANIME, META } from '@consumet/extensions';
 
 // Initialize providers
-const gogoanime = new ANIME.Gogoanime();
+const hianime = new ANIME.Hianime();
 // Fallback could be Anilist (META) which aggregates
 const anilist = new META.Anilist();
 
