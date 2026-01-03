@@ -10,8 +10,14 @@ import { Button } from "@/components/ui/Button";
 import { SkipForward } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+interface Source {
+    url: string;
+    quality?: string;
+    isM3U8: boolean;
+}
+
 interface AnimePlayerProps {
-    source: string | null; // m3u8 url or null
+    sources: Source[] | null;
     subtitles?: { url: string; lang: string; label: string }[];
     intro?: { start: number; end: number };
     outro?: { start: number; end: number };
@@ -22,7 +28,7 @@ interface AnimePlayerProps {
 }
 
 export function AnimePlayer({
-    source,
+    sources,
     subtitles,
     intro,
     outro,
@@ -34,14 +40,21 @@ export function AnimePlayer({
     const playerRef = useRef<MediaPlayerInstance>(null);
     const [showSkip, setShowSkip] = useState(false);
     const [skipType, setSkipType] = useState<"intro" | "outro">("intro");
-    // If no source provided, or if source fails, use iframe
-    const [useIframe, setUseIframe] = useState(!source);
 
+    // State for current source. Default to the first "default" or "auto" quality, or just the first source.
+    const [currentSource, setCurrentSource] = useState<Source | null>(null);
+    const [useIframe, setUseIframe] = useState(false);
+
+    // Initialize source
     useEffect(() => {
-        // If source changes to valid, turn off iframe
-        if (source) setUseIframe(false);
-        else setUseIframe(true);
-    }, [source]);
+        if (sources && sources.length > 0) {
+            const defaultSource = sources.find(s => s.quality === "default" || s.quality === "auto") || sources[0];
+            setCurrentSource(defaultSource);
+            setUseIframe(false);
+        } else {
+            setUseIframe(true); // No sources? Use fallback.
+        }
+    }, [sources]);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -75,33 +88,81 @@ export function AnimePlayer({
     };
 
     const handleLoadError = () => {
-        console.warn("Internal Player failed to load. Switching to Iframe Fallback.");
+        console.warn("Internal Player failed to load source. Switching to Iframe Fallback.");
         setUseIframe(true);
+    };
+
+    const handleSourceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const value = e.target.value;
+        if (value === "external") {
+            setUseIframe(true);
+        } else {
+            const selected = sources?.find(s => s.url === value);
+            if (selected) {
+                setCurrentSource(selected);
+                setUseIframe(false);
+            }
+        }
     };
 
     if (useIframe) {
         // Fallback: VidSrc.cc Embed
-        // https://vidsrc.cc/v2/embed/anime/{malId}/{episodeNumber}/sub
-        // We use vidsrc.cc as it's generally reliable for anime
+        // Added sandbox to block popup ads while allowing necessary script execution
         const iframeSrc = `https://vidsrc.cc/v2/embed/anime/${malId}/${episodeNumber}/sub`;
 
         return (
-            <div className={cn("relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl", className)}>
+            <div className={cn("relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl group", className)}>
+                {/* Source Selector Overlay (even in iframe mode) */}
+                <div className="absolute top-4 right-4 z-50 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <select
+                        className="bg-black/70 text-white border border-white/20 rounded px-2 py-1 text-sm backdrop-blur-md outline-none cursor-pointer hover:bg-black/90"
+                        onChange={handleSourceChange}
+                        value="external"
+                    >
+                        {sources?.map((s, i) => (
+                            <option key={i} value={s.url}>
+                                {s.quality === "default" || s.quality === "auto" ? "Native Player (Auto)" : `Native Player (${s.quality})`}
+                            </option>
+                        ))}
+                        <option value="external">External Player (Ads)</option>
+                    </select>
+                </div>
+
                 <iframe
                     src={iframeSrc}
                     className="w-full h-full border-0"
                     allowFullScreen
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    // Sandbox: allow-scripts is needed for the player to work. 
+                    // We remove 'allow-popups' to try and block new windows.
+                    sandbox="allow-forms allow-pointer-lock allow-same-origin allow-scripts allow-top-navigation"
                 />
             </div>
         );
     }
 
     return (
-        <div className={cn("relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl", className)}>
+        <div className={cn("relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl group", className)}>
+
+            {/* Source Selector Overlay */}
+            <div className="absolute top-4 right-4 z-50 opacity-0 group-hover:opacity-100 transition-opacity">
+                <select
+                    className="bg-black/70 text-white border border-white/20 rounded px-2 py-1 text-sm backdrop-blur-md outline-none cursor-pointer hover:bg-black/90"
+                    onChange={handleSourceChange}
+                    value={currentSource?.url || ""}
+                >
+                    {sources?.map((s, i) => (
+                        <option key={i} value={s.url}>
+                            {s.quality === "default" || s.quality === "auto" ? "Native Player (Auto)" : `Native Player (${s.quality})`}
+                        </option>
+                    ))}
+                    <option value="external">External Player (Ads)</option>
+                </select>
+            </div>
+
             <MediaPlayer
                 ref={playerRef}
-                src={source || ""}
+                src={currentSource?.url || ""}
                 autoPlay={autoPlay}
                 title="Anime Stream"
                 className="w-full h-full"
