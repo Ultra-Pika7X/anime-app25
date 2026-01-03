@@ -2,8 +2,8 @@
 import { NextResponse } from 'next/server';
 import { ANIME } from '@consumet/extensions';
 
-// Initialize AnimePahe
-const animepahe = new ANIME.AnimePahe();
+// Use Gogoanime as primary
+const gogoanime = new ANIME.Gogoanime();
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -15,33 +15,30 @@ export async function GET(request: Request) {
 
     try {
         // 1. Get Title from Jikan (MAL API)
-        // We need the title to search on AnimePahe
         const jikanRes = await fetch(`https://api.jikan.moe/v4/anime/${id}`);
         if (!jikanRes.ok) {
             throw new Error("Failed to fetch anime info from Jikan");
         }
         const jikanData = await jikanRes.json();
-        const title = jikanData.data.title_english || jikanData.data.title; // Prefer English, fallback to default
+        const title = jikanData.data.title_english || jikanData.data.title;
 
         if (!title) {
             throw new Error("Could not determine anime title");
         }
 
-        console.log(`Searching AnimePahe for: ${title}`);
+        console.log(`Searching Gogoanime for: ${title}`);
 
-        // 2. Search AnimePahe
-        const searchRes = await animepahe.search(title);
+        // 2. Search Gogoanime
+        const searchRes = await gogoanime.search(title);
 
         if (!searchRes.results || searchRes.results.length === 0) {
-            return NextResponse.json({ error: 'Anime not found on AnimePahe' }, { status: 404 });
+            return NextResponse.json({ error: 'Anime not found on Gogoanime' }, { status: 404 });
         }
 
-        // Simple matching: take the first one. 
-        // In a more complex app, we might compare release dates or fuzzy match titles.
         const bestMatch = searchRes.results[0];
 
         // 3. Fetch Info & Episodes
-        const info = await animepahe.fetchAnimeInfo(bestMatch.id);
+        const info = await gogoanime.fetchAnimeInfo(bestMatch.id);
 
         return NextResponse.json({
             episodes: info.episodes,

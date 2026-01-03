@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { ANIME } from '@consumet/extensions';
 
-const animepahe = new ANIME.AnimePahe();
+const gogoanime = new ANIME.Gogoanime();
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -15,11 +15,10 @@ export async function GET(request: Request) {
     }
 
     try {
-        // 1. Fetch Stream Sources from AnimePahe
-        // The episodeId passed here comes from the fetchEpisodes call in the other route, so it works.
-        const sources = await animepahe.fetchEpisodeSources(episodeId);
+        // 1. Fetch Stream Sources from Gogoanime
+        const sources = await gogoanime.fetchEpisodeSources(episodeId);
 
-        // 2. Fetch AniSkip Data (Skip Intro/Outro)
+        // 2. Fetch AniSkip Data
         let skipTimes = null;
         if (malId && epNum) {
             try {
