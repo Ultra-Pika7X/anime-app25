@@ -1,48 +1,53 @@
 
 import { NextResponse } from 'next/server';
-import { ANIME, META } from '@consumet/extensions';
+import { ANIME } from '@consumet/extensions';
 
-// Initialize providers
-const hianime = new ANIME.Hianime();
-// Fallback could be Anilist (META) which aggregates
-const anilist = new META.Anilist();
+// Initialize AnimePahe
+const animepahe = new ANIME.AnimePahe();
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id'); // MAL ID or Anime ID
-    const provider = searchParams.get('provider') || 'gogoanime';
+    const id = searchParams.get('id'); // MAL ID
 
     if (!id) {
         return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
     }
 
     try {
-        let episodes: any[] = [];
-        let info: any = {};
+        // 1. Get Title from Jikan (MAL API)
+        // We need the title to search on AnimePahe
+        const jikanRes = await fetch(`https://api.jikan.moe/v4/anime/${id}`);
+        if (!jikanRes.ok) {
+            throw new Error("Failed to fetch anime info from Jikan");
+        }
+        const jikanData = await jikanRes.json();
+        const title = jikanData.data.title_english || jikanData.data.title; // Prefer English, fallback to default
 
-        // Strategy: 
-        // 1. Try to find the anime on the provider using the MAL ID directly (rarely works directly for Gogo)
-        // 2. Search for the anime title (we might need to fetch title first if only ID is provided)
-        // 3. Or use Consumet's Meta provider (Anilist) which maps MAL ID to providers
-
-        // Approach using Anilist Meta provider (best for mapping)
-        try {
-            const animeInfo = await anilist.fetchAnimeInfo(id);
-            if (animeInfo.episodes) {
-                episodes = animeInfo.episodes;
-                info = animeInfo;
-            }
-        } catch (err) {
-            console.error("Anilist fetch failed, trying Search fallback", err);
-            // Fallback: This would require title, which we don't have if only ID passed. 
-            // In a real app, we'd fetch info from Jikan first to get title, then search.
+        if (!title) {
+            throw new Error("Could not determine anime title");
         }
 
+        console.log(`Searching AnimePahe for: ${title}`);
+
+        // 2. Search AnimePahe
+        const searchRes = await animepahe.search(title);
+
+        if (!searchRes.results || searchRes.results.length === 0) {
+            return NextResponse.json({ error: 'Anime not found on AnimePahe' }, { status: 404 });
+        }
+
+        // Simple matching: take the first one. 
+        // In a more complex app, we might compare release dates or fuzzy match titles.
+        const bestMatch = searchRes.results[0];
+
+        // 3. Fetch Info & Episodes
+        const info = await animepahe.fetchAnimeInfo(bestMatch.id);
+
         return NextResponse.json({
-            episodes,
-            title: info.title,
-            image: info.image,
-            description: info.description
+            episodes: info.episodes,
+            title: title,
+            image: bestMatch.image,
+            description: jikanData.data.synopsis
         });
 
     } catch (error: any) {

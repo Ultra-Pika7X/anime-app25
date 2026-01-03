@@ -1,0 +1,1 @@
+src/app/api/anime/episode/route.ts(44,42): error TS2341: Property 'fetchEpisodes' is private and only accessible within class 'AnimePahe'.

@@ -1,9 +1,8 @@
 
 import { NextResponse } from 'next/server';
-import { ANIME, META } from '@consumet/extensions';
+import { ANIME } from '@consumet/extensions';
 
-const hianime = new ANIME.Hianime();
-const anilist = new META.Anilist();
+const animepahe = new ANIME.AnimePahe();
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -16,8 +15,9 @@ export async function GET(request: Request) {
     }
 
     try {
-        // 1. Fetch Stream Sources
-        const sources = await anilist.fetchEpisodeSources(episodeId);
+        // 1. Fetch Stream Sources from AnimePahe
+        // The episodeId passed here comes from the fetchEpisodes call in the other route, so it works.
+        const sources = await animepahe.fetchEpisodeSources(episodeId);
 
         // 2. Fetch AniSkip Data (Skip Intro/Outro)
         let skipTimes = null;
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
         }
 
         return NextResponse.json({
-            sources,
+            sources: sources,
             skipTimes
         });
 
