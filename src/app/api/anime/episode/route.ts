@@ -56,12 +56,24 @@ export async function GET(request: Request) {
             const jikanEpRes = await fetch(`https://api.jikan.moe/v4/anime/${id}/episodes`);
             if (jikanEpRes.ok) {
                 const jikanEpData = await jikanEpRes.json();
-                const fallbackEpisodes = jikanEpData.data.map((ep: any) => ({
+                let fallbackEpisodes = jikanEpData.data.map((ep: any) => ({
                     id: `fallback-${ep.mal_id}`,
                     number: ep.mal_id,
                     title: ep.title,
                     image: null
                 }));
+
+                // Fix for Movies: Jikan returns generic empty array for movies. 
+                // We inject a dummy "Episode 1" so the user can at least try to watch it via fallback.
+                if (fallbackEpisodes.length === 0) {
+                    console.log("Jikan returned 0 episodes (likely Movie). Injecting default Episode 1.");
+                    fallbackEpisodes = [{
+                        id: `fallback-1`,
+                        number: 1,
+                        title: "Full Movie / Episode 1",
+                        image: null
+                    }];
+                }
                 // We need to refetch title/image if we didn't get it earlier (but we usually do)
                 // If jikanData was fetched earlier, we have it. If not, fetch it now.
                 // Actually, we fetched jikanData at line 18.
