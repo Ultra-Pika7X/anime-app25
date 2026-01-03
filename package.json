@@ -9,8 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@consumet/extensions": "^1.8.7",
+    "@consumet/extensions": "^1.6.0",
     "@vidstack/react": "^1.12.13",
+    "axios": "^1.13.2",
     "cheerio": "^1.1.2",
     "clsx": "^2.1.1",
     "firebase": "^12.7.0",
@@ -31,6 +32,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   },
   "overrides": {

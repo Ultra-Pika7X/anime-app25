@@ -1,8 +1,8 @@
 
 import { NextResponse } from 'next/server';
-import { ANIME } from '@consumet/extensions';
+import { AnimePahe } from '@/lib/AnimePahe';
 
-const animeKai = new ANIME.AnimeKai();
+const animepahe = new AnimePahe();
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -15,8 +15,8 @@ export async function GET(request: Request) {
     }
 
     try {
-        // 1. Fetch Stream Sources from AnimeKai
-        const sources = await animeKai.fetchEpisodeSources(episodeId);
+        // 1. Fetch Stream Sources from Custom AnimePahe
+        const sources = await animepahe.fetchEpisodeSources(episodeId);
 
         // 2. Fetch AniSkip Data
         let skipTimes = null;
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
         }
 
         return NextResponse.json({
-            sources: sources,
+            sources: sources.sources, // My custom class returns { sources: [] }
             skipTimes
         });
 
