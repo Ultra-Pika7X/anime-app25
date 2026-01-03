@@ -1,0 +1,2 @@
+src/app/api/anime/episode/route.ts(6,29): error TS2339: Property 'Gogoanime' does not exist on type '{ Hianime: typeof Hianime; AnimePahe: typeof AnimePahe; AnimeKai: typeof AnimeKai; KickAssAnime: typeof KickAssAnime; AnimeSaturn: typeof AnimeSaturn; AnimeUnity: typeof AnimeUnity; }'.
+src/app/api/anime/source/route.ts(5,29): error TS2339: Property 'Gogoanime' does not exist on type '{ Hianime: typeof Hianime; AnimePahe: typeof AnimePahe; AnimeKai: typeof AnimeKai; KickAssAnime: typeof KickAssAnime; AnimeSaturn: typeof AnimeSaturn; AnimeUnity: typeof AnimeUnity; }'.

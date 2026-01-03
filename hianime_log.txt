@@ -1,0 +1,12 @@
+Testing Hianime...
+Searching for: Solo Leveling
+Found: Solo Leveling Season 2: Arise from the Shadow ID: solo-leveling-season-2-arise-from-the-shadow-19413
+Info Title: Solo Leveling Season 2: Arise from the Shadow
+Episodes: 13
+Fetching sources for epId: solo-leveling-season-2-arise-from-the-shadow-19413$episode$131394
+Hianime Failed: Error: Request failed with status code 502
+    at MegaCloud.extract (C:\Users\armor\OneDrive\Documents\Apps(Completed)\anime-app\node_modules\@consumet\extensions\dist\extractors\megacloud.js:38:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Hianime.fetchEpisodeSources (C:\Users\armor\OneDrive\Documents\Apps(Completed)\anime-app\node_modules\@consumet\extensions\dist\providers\anime\hianime.js:157:33)
+    at async Hianime.fetchEpisodeSources (C:\Users\armor\OneDrive\Documents\Apps(Completed)\anime-app\node_modules\@consumet\extensions\dist\providers\anime\hianime.js:230:24)
+    at async testHianime (C:\Users\armor\OneDrive\Documents\Apps(Completed)\anime-app\scripts\test_hianime.js:23:33)

@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { ANIME } from '@consumet/extensions';
 
-const gogoanime = new ANIME.Gogoanime();
+const animeKai = new ANIME.AnimeKai();
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -15,8 +15,8 @@ export async function GET(request: Request) {
     }
 
     try {
-        // 1. Fetch Stream Sources from Gogoanime
-        const sources = await gogoanime.fetchEpisodeSources(episodeId);
+        // 1. Fetch Stream Sources from AnimeKai
+        const sources = await animeKai.fetchEpisodeSources(episodeId);
 
         // 2. Fetch AniSkip Data
         let skipTimes = null;

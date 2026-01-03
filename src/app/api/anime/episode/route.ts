@@ -2,8 +2,8 @@
 import { NextResponse } from 'next/server';
 import { ANIME } from '@consumet/extensions';
 
-// Use Gogoanime as primary
-const gogoanime = new ANIME.Gogoanime();
+// Use AnimeKai as primary
+const animeKai = new ANIME.AnimeKai();
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -26,19 +26,19 @@ export async function GET(request: Request) {
             throw new Error("Could not determine anime title");
         }
 
-        console.log(`Searching Gogoanime for: ${title}`);
+        console.log(`Searching AnimeKai for: ${title}`);
 
-        // 2. Search Gogoanime
-        const searchRes = await gogoanime.search(title);
+        // 2. Search AnimeKai
+        const searchRes = await animeKai.search(title);
 
         if (!searchRes.results || searchRes.results.length === 0) {
-            return NextResponse.json({ error: 'Anime not found on Gogoanime' }, { status: 404 });
+            return NextResponse.json({ error: 'Anime not found on AnimeKai' }, { status: 404 });
         }
 
         const bestMatch = searchRes.results[0];
 
         // 3. Fetch Info & Episodes
-        const info = await gogoanime.fetchAnimeInfo(bestMatch.id);
+        const info = await animeKai.fetchAnimeInfo(bestMatch.id);
 
         return NextResponse.json({
             episodes: info.episodes,
