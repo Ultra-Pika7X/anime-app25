@@ -48,7 +48,42 @@ export async function GET(request: Request) {
         });
 
     } catch (error: any) {
-        console.error('Episode fetch error:', error);
+        console.error('Episode fetch error (Internal):', error.message);
+
+        // Fallback: Use Jikan to get episode list so UI at least loads
+        try {
+            console.log("Attempting Jikan Fallback for episodes...");
+            const jikanEpRes = await fetch(`https://api.jikan.moe/v4/anime/${id}/episodes`);
+            if (jikanEpRes.ok) {
+                const jikanEpData = await jikanEpRes.json();
+                const fallbackEpisodes = jikanEpData.data.map((ep: any) => ({
+                    id: `fallback-${ep.mal_id}`,
+                    number: ep.mal_id,
+                    title: ep.title,
+                    image: null
+                }));
+                // We need to refetch title/image if we didn't get it earlier (but we usually do)
+                // If jikanData was fetched earlier, we have it. If not, fetch it now.
+                // Actually, we fetched jikanData at line 18.
+
+                // If we crash before line 18? No, the try block starts after. 
+                // We need to ensure we return title/image too.
+
+                // Re-fetch info if needed or use what we have? 
+                // To be safe, let's just return what we have or a placeholder.
+
+                return NextResponse.json({
+                    episodes: fallbackEpisodes,
+                    title: "Anime (Fallback)", // Or use cached?
+                    image: "",
+                    description: "Loaded via Fallback",
+                    isFallback: true
+                });
+            }
+        } catch (fallbackErr) {
+            console.error("Jikan Fallback Failed:", fallbackErr);
+        }
+
         return NextResponse.json({ error: error.message || 'Failed to fetch episodes' }, { status: 500 });
     }
 }

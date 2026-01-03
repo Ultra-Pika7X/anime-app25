@@ -56,15 +56,24 @@ export default function WatchPage() {
                 }
 
                 // 2. Fetch Stream Data using the Provider Episode ID
-                const sourceRes = await fetch(`/api/anime/source?episodeId=${targetEp.id}&malId=${id}&epNum=${epNum}`);
-                const sourceData = await sourceRes.json();
+                // If it's a fallback ID (starts with "fallback-"), skip fetching source because we know it doesn't exist on provider
+                if (targetEp.id.toString().startsWith("fallback-")) {
+                    console.log("Using Fallback Episode ID, skipping source fetch.");
+                    setStreamData(null); // This will cause source used in AnimePlayer to be null -> triggers iframe
+                } else {
+                    const sourceRes = await fetch(`/api/anime/source?episodeId=${targetEp.id}&malId=${id}&epNum=${epNum}`);
+                    const sourceData = await sourceRes.json();
 
-                if (sourceData.error) throw new Error(sourceData.error);
-
-                setStreamData({
-                    sources: sourceData.sources.sources,
-                    skipTimes: sourceData.skipTimes
-                });
+                    if (sourceData.error) {
+                        console.warn("Source fetch failed, reverting to fallback iframe:", sourceData.error);
+                        setStreamData(null);
+                    } else {
+                        setStreamData({
+                            sources: sourceData.sources.sources,
+                            skipTimes: sourceData.skipTimes
+                        });
+                    }
+                }
 
             } catch (err: any) {
                 console.error(err);
@@ -87,6 +96,9 @@ export default function WatchPage() {
         );
     }
 
+    // If error is critical (no list found), show error. 
+    // But usually loadContent catches fetch errors.
+
     if (error) {
         return (
             <div className="flex min-h-screen flex-col items-center justify-center bg-black gap-4 text-center px-4">
@@ -99,8 +111,9 @@ export default function WatchPage() {
     }
 
     // Extract HLS Source
-    const hlsSource = streamData?.sources.find(s => s.quality === "default" || s.quality === "auto")?.url
-        || streamData?.sources[0]?.url;
+    const hlsSource = streamData?.sources?.find(s => s.quality === "default" || s.quality === "auto")?.url
+        || streamData?.sources?.[0]?.url
+        || null;
 
     // Extract Skip Times
     const op = streamData?.skipTimes?.results.find(r => r.skipType === "op")?.interval;
@@ -111,14 +124,14 @@ export default function WatchPage() {
             <div className="max-w-7xl mx-auto space-y-6">
 
                 {/* Player Container */}
-                {hlsSource && (
-                    <AnimePlayer
-                        source={hlsSource}
-                        intro={op ? { start: op.startTime, end: op.endTime } : undefined}
-                        outro={ed ? { start: ed.startTime, end: ed.endTime } : undefined}
-                        autoPlay
-                    />
-                )}
+                <AnimePlayer
+                    source={hlsSource}
+                    intro={op ? { start: op.startTime, end: op.endTime } : undefined}
+                    outro={ed ? { start: ed.startTime, end: ed.endTime } : undefined}
+                    autoPlay
+                    malId={id}
+                    episodeNumber={epNum}
+                />
 
                 {/* Episode Info / Navigation (Basic) */}
                 <div className="flex justify-between items-center text-white">

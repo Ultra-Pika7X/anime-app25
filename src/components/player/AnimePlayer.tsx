@@ -11,18 +11,37 @@ import { SkipForward } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AnimePlayerProps {
-    source: string; // m3u8 url
+    source: string | null; // m3u8 url or null
     subtitles?: { url: string; lang: string; label: string }[];
     intro?: { start: number; end: number };
     outro?: { start: number; end: number };
     className?: string;
     autoPlay?: boolean;
+    malId: string;
+    episodeNumber: string;
 }
 
-export function AnimePlayer({ source, subtitles, intro, outro, className, autoPlay = false }: AnimePlayerProps) {
+export function AnimePlayer({
+    source,
+    subtitles,
+    intro,
+    outro,
+    className,
+    autoPlay = false,
+    malId,
+    episodeNumber
+}: AnimePlayerProps) {
     const playerRef = useRef<MediaPlayerInstance>(null);
     const [showSkip, setShowSkip] = useState(false);
     const [skipType, setSkipType] = useState<"intro" | "outro">("intro");
+    // If no source provided, or if source fails, use iframe
+    const [useIframe, setUseIframe] = useState(!source);
+
+    useEffect(() => {
+        // If source changes to valid, turn off iframe
+        if (source) setUseIframe(false);
+        else setUseIframe(true);
+    }, [source]);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -55,14 +74,38 @@ export function AnimePlayer({ source, subtitles, intro, outro, className, autoPl
         }
     };
 
+    const handleLoadError = () => {
+        console.warn("Internal Player failed to load. Switching to Iframe Fallback.");
+        setUseIframe(true);
+    };
+
+    if (useIframe) {
+        // Fallback: VidSrc.cc Embed
+        // https://vidsrc.cc/v2/embed/anime/{malId}/{episodeNumber}/sub
+        // We use vidsrc.cc as it's generally reliable for anime
+        const iframeSrc = `https://vidsrc.cc/v2/embed/anime/${malId}/${episodeNumber}/sub`;
+
+        return (
+            <div className={cn("relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl", className)}>
+                <iframe
+                    src={iframeSrc}
+                    className="w-full h-full border-0"
+                    allowFullScreen
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                />
+            </div>
+        );
+    }
+
     return (
         <div className={cn("relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl", className)}>
             <MediaPlayer
                 ref={playerRef}
-                src={source}
+                src={source || ""}
                 autoPlay={autoPlay}
                 title="Anime Stream"
                 className="w-full h-full"
+                onError={handleLoadError}
             >
                 <MediaProvider>
                     {subtitles?.map((sub, i) => (
