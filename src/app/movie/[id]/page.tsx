@@ -92,7 +92,7 @@ export default async function MoviePage({ params }: PageProps) {
                             </p>
 
                             <div className="flex flex-wrap gap-4 mt-2">
-                                <Link href={`https://vidsrc.xyz/embed/movie/${id}`} target="_blank">
+                                <Link href={`/watch/${id}/1`}>
                                     <Button size="lg" className="h-14 px-10 gap-3 text-lg font-bold rounded-full shadow-[0_0_20px_rgba(97,82,223,0.4)] hover:shadow-[0_0_30px_rgba(97,82,223,0.6)] transition-all">
                                         <Play className="h-6 w-6 fill-current" /> Play Now
                                     </Button>

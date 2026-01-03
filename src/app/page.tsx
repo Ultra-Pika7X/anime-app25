@@ -70,7 +70,7 @@ export default async function Home() {
             </p>
 
             <div className="flex flex-wrap gap-3 pt-2 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500">
-              <Link href={`https://vidsrc.xyz/embed/${featured?.media_type || 'movie'}/${featured?.id}`} target="_blank">
+              <Link href={`/watch/${featured?.id}/1`}>
                 <Button size="lg" className="h-12 px-6 gap-2 text-base font-bold rounded-full shadow-[0_0_20px_rgba(97,82,223,0.4)] hover:shadow-[0_0_30px_rgba(97,82,223,0.6)] transition-all">
                   <Play className="h-5 w-5 fill-current" /> Watch Now
                 </Button>

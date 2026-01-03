@@ -90,7 +90,7 @@ export default async function TvPage({ params }: PageProps) {
 
                             <div className="flex flex-wrap gap-4 mt-2">
                                 {/* Default to S1E1 for now */}
-                                <Link href={`https://vidsrc.xyz/embed/tv/${id}/1/1`} target="_blank">
+                                <Link href={`/watch/${id}/1`}>
                                     <Button size="lg" className="h-14 px-10 gap-3 text-lg font-bold rounded-full shadow-[0_0_20px_rgba(97,82,223,0.4)] hover:shadow-[0_0_30px_rgba(97,82,223,0.6)] transition-all">
                                         <Play className="h-6 w-6 fill-current" /> Play S1 E1
                                     </Button>
