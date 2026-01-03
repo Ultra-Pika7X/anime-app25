@@ -8,7 +8,13 @@ export class AnimePahe {
     // Custom search implementation
     async search(query: string) {
         try {
-            const { data } = await axios.get(`${this.baseUrl}/api?m=search&q=${encodeURIComponent(query)}`);
+            const { data } = await axios.get(`${this.baseUrl}/api?m=search&q=${encodeURIComponent(query)}`, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Referer': this.baseUrl,
+                    'Cookie': 'dummy_cookie=1' // sometimes helps
+                }
+            });
             // API returns { data: [ { id: 123, title: "..." } ] }
             if (!data.data) return { results: [] };
 
@@ -21,9 +27,9 @@ export class AnimePahe {
                     releaseDate: item.year
                 }))
             };
-        } catch (err) {
-            console.error("AnimePahe Search Error", err);
-            return { results: [] };
+        } catch (err: any) {
+            console.error("AnimePahe Search Error:", err.message);
+            throw err; // Propagate error to route
         }
     }
 
@@ -73,6 +79,7 @@ export class AnimePahe {
         try {
             const { data } = await axios.get(`${this.baseUrl}/api?m=links&id=${episodeId}&p=kwik`, {
                 headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                     'Referer': this.baseUrl
                 }
             });
