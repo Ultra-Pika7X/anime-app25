@@ -29,7 +29,11 @@ export default function SignupPage() {
             router.push("/");
         } catch (err: any) {
             console.error("Signup error:", err);
-            setError(err.message || "Failed to create account. Please try again.");
+            if (err.code === "auth/email-already-in-use") {
+                setError("This email is already registered. Please log in instead.");
+            } else {
+                setError(err.message || "Failed to create account. Please try again.");
+            }
         } finally {
             setLoading(false);
         }

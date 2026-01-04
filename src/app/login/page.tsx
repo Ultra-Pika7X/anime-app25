@@ -25,7 +25,11 @@ export default function LoginPage() {
             router.push("/");
         } catch (err: any) {
             console.error("Login error:", err);
-            setError(err.message || "Failed to log in. Please check your credentials.");
+            if (err.code === "auth/invalid-credential" || err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
+                setError("Incorrect email or password. Please try again.");
+            } else {
+                setError(err.message || "Failed to log in. Please check your credentials.");
+            }
         } finally {
             setLoading(false);
         }

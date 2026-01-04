@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Bell, User, LogOut } from "lucide-react";
+import { Search, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -60,9 +60,7 @@ export function Navbar() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <Button variant="ghost" size="icon" className="hidden md:flex rounded-full text-white/70 hover:bg-white/10 hover:text-white">
-                        <Bell className="h-5 w-5" />
-                    </Button>
+
 
                     {user ? (
                         <div className="relative">
