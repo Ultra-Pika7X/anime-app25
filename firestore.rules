@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is signed in
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if user owns the document
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Users collection rules
+    // Only the user can read/write their own profile data
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && isOwner(userId);
+    }
+
+    // Library/History/Watchlist rules (for future migration)
+    // Structured as subcollections under the user document for scalability and security
+    match /users/{userId}/history/{itemId} {
+      allow read, write: if isSignedIn() && isOwner(userId);
+    }
+    
+    match /users/{userId}/watchlist/{itemId} {
+      allow read, write: if isSignedIn() && isOwner(userId);
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
