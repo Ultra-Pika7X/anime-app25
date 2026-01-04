@@ -1,8 +1,10 @@
 
 import { NextResponse } from 'next/server';
 import { AnimePahe } from '@/lib/AnimePahe';
+import { Gogoanime } from '@/lib/Gogoanime';
 
 const animepahe = new AnimePahe();
+const gogoanime = new Gogoanime();
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -15,8 +17,26 @@ export async function GET(request: Request) {
     }
 
     try {
-        // 1. Fetch Stream Sources from Custom AnimePahe
-        const sources = await animepahe.fetchEpisodeSources(episodeId);
+        let sources: any = { sources: [] };
+
+        // Parse Provider
+        let provider = "pahe";
+        let realId = episodeId;
+
+        if (episodeId.includes(':')) {
+            const [p, id] = episodeId.split(':');
+            provider = p;
+            realId = id;
+        }
+
+        console.log(`Fetching sources for provider: ${provider}, ID: ${realId}`);
+
+        if (provider === 'gogo') {
+            sources = await gogoanime.fetchEpisodeSources(realId);
+        } else {
+            // Default to AnimePahe
+            sources = await animepahe.fetchEpisodeSources(realId);
+        }
 
         // 2. Fetch AniSkip Data
         let skipTimes = null;
@@ -32,7 +52,7 @@ export async function GET(request: Request) {
         }
 
         return NextResponse.json({
-            sources: sources.sources, // My custom class returns { sources: [] }
+            sources: sources.sources || [],
             skipTimes
         });
 

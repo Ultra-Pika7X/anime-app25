@@ -1,8 +1,10 @@
 
 import { NextResponse } from 'next/server';
 import { AnimePahe } from '@/lib/AnimePahe';
+import { Gogoanime } from '@/lib/Gogoanime';
 
 const animepahe = new AnimePahe();
+const gogoanime = new Gogoanime();
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -13,38 +15,103 @@ export async function GET(request: Request) {
     }
 
     try {
+
         // 1. Get Title from Jikan (MAL API)
         const jikanRes = await fetch(`https://api.jikan.moe/v4/anime/${id}`);
         if (!jikanRes.ok) {
             throw new Error("Failed to fetch anime info from Jikan");
         }
         const jikanData = await jikanRes.json();
-        const title = jikanData.data.title_english || jikanData.data.title;
 
-        if (!title) {
-            throw new Error("Could not determine anime title");
+        // Collect all possible titles
+        const titlesToTry = new Set<string>();
+
+        // Add prioritized titles
+        if (jikanData.data.title_english) titlesToTry.add(jikanData.data.title_english);
+        if (jikanData.data.title) titlesToTry.add(jikanData.data.title);
+        if (jikanData.data.title_japanese) titlesToTry.add(jikanData.data.title_japanese);
+
+        // Add synonyms
+        if (jikanData.data.title_synonyms && Array.isArray(jikanData.data.title_synonyms)) {
+            jikanData.data.title_synonyms.forEach((t: string) => titlesToTry.add(t));
         }
 
-        console.log(`Searching Custom AnimePahe for: ${title}`);
+        const titleList = Array.from(titlesToTry);
+        console.log(`Searching Providers with titles: ${JSON.stringify(titleList)}`);
 
-        // 2. Search AnimePahe
-        const searchRes = await animepahe.search(title);
+        let episodes: any[] = [];
+        let provider = "";
+        let animeImage = "";
+        let usedTitle = "";
 
-        if (!searchRes.results || searchRes.results.length === 0) {
-            return NextResponse.json({ error: 'Anime not found on AnimePahe' }, { status: 404 });
+        // Strategy: Iterate through ALL titles until we find a match
+        for (const searchTitle of titleList) {
+            if (episodes.length > 0) break; // Found it!
+
+            // 2. Try AnimePahe (Better Quality)
+            try {
+                // console.log(`Trying AnimePahe with: "${searchTitle}"`);
+                const paheRes = await animepahe.search(searchTitle);
+
+                if (paheRes.results.length > 0) {
+                    const bestMatch = paheRes.results[0];
+                    const info = await animepahe.fetchAnimeInfo(bestMatch.id);
+                    if (info.episodes && info.episodes.length > 0) {
+                        episodes = info.episodes.map((ep: any) => ({
+                            ...ep,
+                            id: `pahe:${ep.id}` // Prefix ID
+                        }));
+                        animeImage = bestMatch.image;
+                        provider = "AnimePahe";
+                        usedTitle = searchTitle;
+                        console.log(`FOUND on AnimePahe using title: "${searchTitle}"`);
+                        break;
+                    }
+                }
+            } catch (e) {
+                // console.warn(`AnimePahe failed for "${searchTitle}"`);
+            }
+
+            // 3. Try Gogoanime (Larger Library)
+            if (episodes.length === 0) {
+                try {
+                    // console.log(`Trying Gogoanime with: "${searchTitle}"`);
+                    const gogoRes = await gogoanime.search(searchTitle);
+
+                    if (gogoRes.results.length > 0) {
+                        const bestMatch = gogoRes.results[0];
+                        const info = await gogoanime.fetchAnimeInfo(bestMatch.id);
+                        if (info && info.episodes && info.episodes.length > 0) {
+                            episodes = info.episodes.map((ep: any) => ({
+                                ...ep,
+                                id: `gogo:${ep.id}` // Prefix ID
+                            }));
+                            animeImage = bestMatch.image || animeImage;
+                            provider = "Gogoanime";
+                            usedTitle = searchTitle;
+                            console.log(`FOUND on Gogoanime using title: "${searchTitle}"`);
+                            break;
+                        }
+                    }
+                } catch (e) {
+                    // console.warn(`Gogoanime failed for "${searchTitle}"`);
+                }
+            }
         }
 
-        const bestMatch = searchRes.results[0];
+        if (episodes.length === 0) {
+            console.warn("Anime not found on any provider with any title.");
+            throw new Error("Anime not found on any provider");
+        }
 
-        // 3. Fetch Info & Episodes
-        // bestMatch.id is the AnimePahe ID (confusingly passed as string)
-        const info = await animepahe.fetchAnimeInfo(bestMatch.id);
+        console.log(`Final Result: ${episodes.length} episodes via ${provider}`);
 
         return NextResponse.json({
-            episodes: info.episodes,
+            episodes: episodes,
             title: title,
-            image: bestMatch.image,
-            description: jikanData.data.synopsis
+            image: animeImage,
+            description: jikanData.data.synopsis,
+            provider
         });
 
     } catch (error: any) {
@@ -74,19 +141,10 @@ export async function GET(request: Request) {
                         image: null
                     }];
                 }
-                // We need to refetch title/image if we didn't get it earlier (but we usually do)
-                // If jikanData was fetched earlier, we have it. If not, fetch it now.
-                // Actually, we fetched jikanData at line 18.
-
-                // If we crash before line 18? No, the try block starts after. 
-                // We need to ensure we return title/image too.
-
-                // Re-fetch info if needed or use what we have? 
-                // To be safe, let's just return what we have or a placeholder.
 
                 return NextResponse.json({
                     episodes: fallbackEpisodes,
-                    title: "Anime (Fallback)", // Or use cached?
+                    title: "Anime (Fallback)",
                     image: "",
                     description: "Loaded via Fallback",
                     isFallback: true

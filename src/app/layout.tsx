@@ -4,6 +4,10 @@ import "./globals.css";
 import { Navbar } from "@/components/common/Navbar";
 import { Sidebar } from "@/components/common/Sidebar";
 import { AuthProvider } from "@/context/AuthContext";
+import { LibraryProvider } from "@/context/LibraryContext";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "sonner";
+import AuthGuard from "@/components/auth/AuthGuard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,15 +35,27 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background font-sans halo`}
         suppressHydrationWarning
       >
-        <AuthProvider>
-          <Sidebar />
-          <Navbar />
-          <div className="flex-1 lg:pl-20 transition-all duration-300">
-            <main className="min-h-screen">
-              {children}
-            </main>
-          </div>
-        </AuthProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <AuthProvider>
+            <LibraryProvider>
+              <AuthGuard>
+                <Sidebar />
+                <Navbar />
+                <div className="flex-1 lg:pl-20 transition-all duration-300">
+                  <main className="min-h-screen">
+                    {children}
+                  </main>
+                </div>
+              </AuthGuard>
+            </LibraryProvider>
+          </AuthProvider>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

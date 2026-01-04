@@ -4,6 +4,7 @@ import { Play, Star, Calendar } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { MediaRow } from "@/components/common/MediaRow";
+import { WatchlistButton } from "@/components/common/WatchlistButton";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -95,9 +96,15 @@ export default async function TvPage({ params }: PageProps) {
                                         <Play className="h-6 w-6 fill-current" /> Play S1 E1
                                     </Button>
                                 </Link>
-                                <Button size="lg" variant="outline" className="h-14 px-10 gap-3 text-lg font-bold rounded-full border-white/20 bg-white/5 backdrop-blur-md hover:bg-white/10 transition-all text-white">
-                                    + Add to List
-                                </Button>
+                                <WatchlistButton
+                                    item={{
+                                        id: id,
+                                        title: show.name,
+                                        image: posterUrl || "",
+                                        type: "tv"
+                                    }}
+                                    className="h-14 px-10 text-lg rounded-full"
+                                />
                             </div>
                         </div>
                     </div>

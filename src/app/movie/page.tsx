@@ -1,4 +1,4 @@
-import { tmdb } from "@/lib/tmdb";
+import { jikan } from "@/lib/jikan";
 import { MediaCard } from "@/components/common/MediaCard";
 import { MediaItem } from "@/types";
 
@@ -6,7 +6,7 @@ export default async function MoviesPage() {
     let movies: MediaItem[] = [];
 
     try {
-        const data = await tmdb.getPopular("movie");
+        const data = await jikan.getPopularAnime("movie");
         movies = data.results;
     } catch (error) {
         console.error("Failed to fetch movies", error);

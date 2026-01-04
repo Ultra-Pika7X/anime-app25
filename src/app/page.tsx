@@ -1,6 +1,6 @@
 import { MediaRow } from "@/components/common/MediaRow";
 import { ContinueWatchingRow } from "@/components/common/ContinueWatchingRow";
-import { tmdb } from "@/lib/tmdb";
+import { jikan } from "@/lib/jikan";
 import { Button } from "@/components/ui/Button";
 import { Play, Info } from "lucide-react";
 import Link from "next/link";
@@ -18,10 +18,10 @@ export default async function Home() {
       topRatedMovies,
       popularMovies,
     ] = await Promise.all([
-      tmdb.getTrending("movie"),
-      tmdb.getTrending("tv"),
-      tmdb.getTopRated("movie"),
-      tmdb.getPopular("movie"),
+      jikan.getTrendingAnime("movie"),
+      jikan.getTrendingAnime("tv"),
+      jikan.getTopRatedAnime("movie"),
+      jikan.getPopularAnime("movie"),
     ]);
   } catch (error) {
     console.error("Failed to fetch TMDB data:", error);

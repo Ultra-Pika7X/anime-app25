@@ -1,5 +1,6 @@
 import { scraper } from "@/lib/scraper";
-import { VideoPlayer } from "@/components/player/VideoPlayer";
+
+import { AnimePlayer } from "@/components/player/AnimePlayer";
 import { tmdb } from "@/lib/tmdb";
 import { Button } from "@/components/ui/Button";
 import { ArrowLeft } from "lucide-react";
@@ -54,24 +55,20 @@ export default async function WatchPage({ params, searchParams }: PageProps) {
                     </Button>
                 </Link>
 
-                {stream.isEmbed ? (
-                    <div className="absolute inset-0 z-0">
-                        <iframe
-                            src={stream.url}
-                            className="h-full w-full border-0"
-                            allowFullScreen
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        />
-                    </div>
-                ) : (
-                    <VideoPlayer
-                        src={stream.url}
-                        poster={poster}
-                        title={title}
-                        id={mediaId}
-                        type={type}
-                    />
-                )}
+                <AnimePlayer
+                    sources={stream.isEmbed ? null : [{
+                        url: stream.url,
+                        quality: "default",
+                        isM3U8: stream.url.includes(".m3u8")
+                    }]}
+                    malId={mediaId}
+                    episodeNumber={e || "1"}
+                    title={title}
+                    image={poster}
+                    type={type}
+                    autoPlay
+                    className="w-full h-full"
+                />
             </div>
         </div>
     );

@@ -9,6 +9,7 @@ import '@vidstack/react/player/styles/default/layouts/video.css';
 import { Button } from "@/components/ui/Button";
 import { SkipForward } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLibrary } from "@/context/LibraryContext";
 
 interface Source {
     url: string;
@@ -25,6 +26,9 @@ interface AnimePlayerProps {
     autoPlay?: boolean;
     malId: string;
     episodeNumber: string;
+    title: string;
+    image: string;
+    type: "movie" | "tv";
 }
 
 export function AnimePlayer({
@@ -35,9 +39,23 @@ export function AnimePlayer({
     className,
     autoPlay = false,
     malId,
-    episodeNumber
+    episodeNumber,
+    title,
+    image,
+    type
 }: AnimePlayerProps) {
     const playerRef = useRef<MediaPlayerInstance>(null);
+    const { addToHistory } = useLibrary();
+
+    // Add to history on mount
+    useEffect(() => {
+        addToHistory({
+            id: malId,
+            title: title || `Episode ${episodeNumber}`,
+            image: image,
+            type: type
+        });
+    }, [malId, episodeNumber, title, image, type, addToHistory]);
     const [showSkip, setShowSkip] = useState(false);
     const [skipType, setSkipType] = useState<"intro" | "outro">("intro");
 
@@ -144,21 +162,47 @@ export function AnimePlayer({
     return (
         <div className={cn("relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl group", className)}>
 
-            {/* Source Selector Overlay */}
-            <div className="absolute top-4 right-4 z-50 opacity-0 group-hover:opacity-100 transition-opacity">
-                <select
-                    className="bg-black/70 text-white border border-white/20 rounded px-2 py-1 text-sm backdrop-blur-md outline-none cursor-pointer hover:bg-black/90"
-                    onChange={handleSourceChange}
-                    value={currentSource?.url || ""}
-                >
-                    {sources?.map((s, i) => (
-                        <option key={i} value={s.url}>
-                            {s.quality === "default" || s.quality === "auto" ? "Native Player (Auto)" : `Native Player (${s.quality})`}
-                        </option>
-                    ))}
-                    <option value="external">External Player (Ads)</option>
-                </select>
+            {/* Player Header Overlay */}
+            <div className="absolute top-0 left-0 right-0 p-4 z-50 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none group-hover:pointer-events-auto">
+                <div className="flex items-center gap-4">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => window.history.back()}
+                        className="text-white hover:bg-white/10 rounded-full"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                    </Button>
+                    <div>
+                        <h1 className="text-lg font-bold text-white shadow-black drop-shadow-md">
+                            {/* We can't easily get the title passed here without prop drilling, 
+                                but we can show "CloudAnime" or try to fetch it.
+                                For now, let's use a placeholder or prompt update. 
+                                Actually, we can assume the user knows what they clicked, 
+                                or pass `title` prop to AnimePlayer. 
+                            */}
+                            Anime Stream
+                        </h1>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <select
+                        className="bg-black/50 text-white border border-white/10 rounded-lg px-3 py-1.5 text-xs font-medium backdrop-blur-md outline-none cursor-pointer hover:bg-black/70 transition-colors"
+                        onChange={handleSourceChange}
+                        value={useIframe ? "external" : currentSource?.url || ""}
+                    >
+                        {sources?.map((s, i) => (
+                            <option key={i} value={s.url}>
+                                {s.quality === "default" || s.quality === "auto" ? "Native (Auto)" : `Native (${s.quality})`}
+                            </option>
+                        ))}
+                        <option value="external">External Player (Ads)</option>
+                    </select>
+                </div>
             </div>
+
+            {/* Remove old dropdown in favor of the new header one */}
 
             <MediaPlayer
                 ref={playerRef}

@@ -31,7 +31,7 @@ export function Sidebar() {
     const pathname = usePathname();
 
     return (
-        <aside className="fixed left-0 top-16 hidden h-[calc(100vh-4rem)] w-20 flex-col items-center border-r border-white/5 bg-background/40 py-6 backdrop-blur-xl transition-all hover:w-64 lg:flex z-40 group/sidebar">
+        <aside className="fixed left-0 top-16 hidden h-[calc(100vh-4rem)] w-20 flex-col items-center border-r border-white/5 bg-[#0a0a0a]/80 py-6 backdrop-blur-2xl transition-all hover:w-64 lg:flex z-40 group/sidebar">
             <div className="flex w-full flex-col gap-4 px-3">
                 {navItems.map((item) => {
                     const isActive = pathname === item.href;

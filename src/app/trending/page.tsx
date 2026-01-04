@@ -1,4 +1,4 @@
-import { tmdb } from "@/lib/tmdb";
+import { jikan } from "@/lib/jikan";
 import { MediaCard } from "@/components/common/MediaCard";
 import { MediaItem } from "@/types";
 
@@ -7,8 +7,8 @@ export default async function TrendingPage() {
     let TrendingTV: MediaItem[] = [];
 
     try {
-        const movieData = await tmdb.getTrending("movie");
-        const tvData = await tmdb.getTrending("tv");
+        const movieData = await jikan.getTrendingAnime("movie");
+        const tvData = await jikan.getTrendingAnime("tv");
         TrendingMovies = movieData.results;
         TrendingTV = tvData.results;
     } catch (error) {
