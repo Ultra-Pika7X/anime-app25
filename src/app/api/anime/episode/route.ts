@@ -23,6 +23,13 @@ export async function GET(request: Request) {
         }
         const jikanData = await jikanRes.json();
 
+        // Initialize variables
+        let episodes: any[] = [];
+        let animeImage = jikanData.data.images?.jpg?.large_image_url || "";
+        let provider = "";
+        let usedTitle = "";
+        const title = jikanData.data.title_english || jikanData.data.title || "Anime";
+
         // Collect all possible titles
         const titlesToTry = new Set<string>();
 
@@ -39,63 +46,81 @@ export async function GET(request: Request) {
         const titleList = Array.from(titlesToTry);
         console.log(`Searching Providers with titles: ${JSON.stringify(titleList)}`);
 
-        let episodes: any[] = [];
-        let provider = "";
-        let animeImage = "";
-        let usedTitle = "";
+        const validProviders = [
+            {
+                name: "AnimePahe",
+                fn: async (query: string) => {
+                    // console.log(`Trying AnimePahe with: "${query}"`);
+                    const res = await animepahe.search(query);
+                    if (res.results.length > 0) {
+                        const bestMatch = res.results[0];
+                        const info = await animepahe.fetchAnimeInfo(bestMatch.id);
+                        if (info && info.episodes && info.episodes.length > 0) {
+                            return {
+                                episodes: info.episodes.map((ep: any) => ({ ...ep, id: `pahe:${ep.id}` })),
+                                image: bestMatch.image,
+                                provider: "AnimePahe"
+                            };
+                        }
+                    }
+                    return null;
+                }
+            },
+            {
+                name: "Gogoanime",
+                fn: async (query: string) => {
+                    // console.log(`Trying Gogoanime with: "${query}"`);
+                    const res = await gogoanime.search(query);
+                    if (res.results.length > 0) {
+                        const bestMatch = res.results[0];
+                        const info = await gogoanime.fetchAnimeInfo(bestMatch.id);
+                        if (info && info.episodes && info.episodes.length > 0) {
+                            return {
+                                episodes: info.episodes.map((ep: any) => ({ ...ep, id: `gogo:${ep.id}` })),
+                                image: bestMatch.image,
+                                provider: "Gogoanime"
+                            };
+                        }
+                    }
+                    return null;
+                }
+            }
+        ];
+
+        const preferred = searchParams.get('provider'); // "AnimePahe" | "Gogoanime"
+
+        // Sort providers: preferred first
+        if (preferred) {
+            validProviders.sort((a, b) => {
+                if (a.name === preferred) return -1;
+                if (b.name === preferred) return 1;
+                return 0;
+            });
+        }
 
         // Strategy: Iterate through ALL titles until we find a match
+        // But we want to iterate Providers PER Title? Or Titles PER Provider?
+        // Prioritize Title Match logic is usually safer (try exact title on all providers).
+        // But code previously iterated Titles, then inside tried Pahe THEN Gogo.
+        // So it prioritized Pahe for Title 1, then Gogo for Title 1.
+        // That seems correct. We just want to swap Pahe/Gogo order.
+
         for (const searchTitle of titleList) {
             if (episodes.length > 0) break; // Found it!
 
-            // 2. Try AnimePahe (Better Quality)
-            try {
-                // console.log(`Trying AnimePahe with: "${searchTitle}"`);
-                const paheRes = await animepahe.search(searchTitle);
-
-                if (paheRes.results.length > 0) {
-                    const bestMatch = paheRes.results[0];
-                    const info = await animepahe.fetchAnimeInfo(bestMatch.id);
-                    if (info.episodes && info.episodes.length > 0) {
-                        episodes = info.episodes.map((ep: any) => ({
-                            ...ep,
-                            id: `pahe:${ep.id}` // Prefix ID
-                        }));
-                        animeImage = bestMatch.image;
-                        provider = "AnimePahe";
-                        usedTitle = searchTitle;
-                        console.log(`FOUND on AnimePahe using title: "${searchTitle}"`);
-                        break;
-                    }
-                }
-            } catch (e) {
-                // console.warn(`AnimePahe failed for "${searchTitle}"`);
-            }
-
-            // 3. Try Gogoanime (Larger Library)
-            if (episodes.length === 0) {
+            // Iterate ordered providers
+            for (const prov of validProviders) {
                 try {
-                    // console.log(`Trying Gogoanime with: "${searchTitle}"`);
-                    const gogoRes = await gogoanime.search(searchTitle);
-
-                    if (gogoRes.results.length > 0) {
-                        const bestMatch = gogoRes.results[0];
-                        const info = await gogoanime.fetchAnimeInfo(bestMatch.id);
-                        if (info && info.episodes && info.episodes.length > 0) {
-                            episodes = info.episodes.map((ep: any) => ({
-                                ...ep,
-                                id: `gogo:${ep.id}` // Prefix ID
-                            }));
-                            animeImage = bestMatch.image || animeImage;
-                            provider = "Gogoanime";
-                            usedTitle = searchTitle;
-                            console.log(`FOUND on Gogoanime using title: "${searchTitle}"`);
-                            break;
-                        }
+                    const result = await prov.fn(searchTitle);
+                    if (result) {
+                        episodes = result.episodes;
+                        animeImage = result.image || animeImage;
+                        provider = result.provider;
+                        usedTitle = searchTitle;
+                        console.log(`FOUND on ${provider} using title: "${searchTitle}"`);
+                        break; // Break provider loop
                     }
-                } catch (e) {
-                    // console.warn(`Gogoanime failed for "${searchTitle}"`);
-                }
+                } catch (e) { /* ignore */ }
             }
         }
 
@@ -110,7 +135,7 @@ export async function GET(request: Request) {
             episodes: episodes,
             title: title,
             image: animeImage,
-            description: jikanData.data.synopsis,
+            description: jikanData.data.synopsis || "No description available.",
             provider
         });
 

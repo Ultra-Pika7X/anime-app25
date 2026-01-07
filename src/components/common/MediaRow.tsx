@@ -58,7 +58,7 @@ export function MediaRow({ title, items, type }: MediaRowProps) {
                 >
                     {items.map((item) => (
                         <div key={item.id} className="w-[160px] flex-none md:w-[220px]">
-                            <MediaCard item={item} type={type || item.media_type as "movie" | "tv"} />
+                            <MediaCard item={item} type={type} />
                         </div>
                     ))}
                 </div>

@@ -91,55 +91,82 @@ export class Gogoanime {
             const { data } = await axios.get(`${this.baseUrl}/${episodeId}`);
             const $ = load(data);
 
-            // Get servers
             const sources: any[] = [];
+            const serverPromises: Promise<any>[] = [];
 
-            // Try to find the iframe URLs
             $('.anime_muti_link ul li a').each((i, el) => {
                 const serverName = $(el).text().replace('Choose this server', '').trim();
-                const videoUrl = $(el).attr('data-video');
+                let videoUrl = $(el).attr('data-video');
 
                 if (videoUrl) {
-                    // We can try to prioritize Vidstreaming/Gogoplay
-                    // For now, we return the iframe URL. 
-                    // The frontend might need a proxy or we need to extract m3u8.
-                    // Extracting m3u8 from Gogo is hard (encrypted). 
-                    // But we can return the external embed url as a fallback or a "source" to be played in iframe.
+                    if (!videoUrl.startsWith('http')) videoUrl = `https:${videoUrl}`;
 
-                    // NOTE: Our player expects m3u8 or mp4 for native playback.
-                    // If we can't extract m3u8 easily, we might just have to return these as "external" sources?
-                    // BUT user wants native.
-
-                    // Let's try to support minimal extraction for "Vidstreaming"
-                    if (serverName.includes('Vidstreaming') || serverName.includes('Gogo server')) {
-                        // This usually leads to m3u8 if we know how to decode.
-                        // For reliability in this short time, I will return them as sources 
-                        // but "AnimePlayer" might need to handle them as iframes if they are not .m3u8?
-                        // Or we can try to find a direct .m3u8 source via an API or use a simpler extractor.
-
-                        // Re-use Consumet logic? 
-                        // Consumet's Gogoanime extractor is complex.
-
-                        // Alternative strategy: Use `api. consumet.org` ? No, user said broken.
-
-                        // Let's just return the iframe URL. 
-                        // And in AnimePlayer, if url doesn't end in m3u8/mp4, treat as iframe?
-                        // Or try to use a free Gogo API.
-
-                        sources.push({
-                            url: videoUrl,
-                            quality: serverName,
-                            isM3U8: videoUrl.includes('.m3u8')
-                        });
+                    // Prioritize servers that often have direct m3u8
+                    if (serverName.includes('Vidstreaming') || serverName.includes('Gogo server') || serverName.includes('StreamWish')) {
+                        serverPromises.push(this.extractDirectStream(videoUrl, serverName));
                     }
                 }
             });
 
-            return { sources };
+            const results = await Promise.all(serverPromises);
+            results.forEach(res => {
+                if (res) sources.push(res);
+            });
 
+            return { sources };
         } catch (err: any) {
             console.error("Gogoanime Source Error:", err.message);
             return { sources: [] };
+        }
+    }
+
+    private async extractDirectStream(url: string, name: string) {
+        try {
+            const { data } = await axios.get(url, {
+                headers: { 'Referer': this.baseUrl }
+            });
+
+            // 1. Try to find sources: [...] JSON block (JWPlayer style)
+            const sourcesMatch = data.match(/sources:\s*(\[[^\]]+\])/);
+            if (sourcesMatch && sourcesMatch[1]) {
+                const sourcesStr = sourcesMatch[1];
+                // Simple parser to extract file: '...' and label: '...'
+                // JSON.parse might fail if keys aren't quoted, so use regex
+                const fileMatches = [...sourcesStr.matchAll(/file:\s*['"]([^'"]+)['"]/g)];
+
+                if (fileMatches.length > 0) {
+                    // Return the first valid m3u8 found, or mapping all of them?
+                    // The scraper expects a single promise to return one source object, or we need to refactor to return array.
+                    // The current fetchEpisodeSources expects a list of promises where each returns ONE source object (or null).
+                    // But actually scraper.ts handles list of lists? No, fetchEpisodeSources returns { sources: [...] }.
+                    // But wait, fetchEpisodeSources does: 
+                    // results.forEach(res => { if (res) sources.push(res); });
+                    // So extractDirectStream returns a SINGLE object.
+
+                    // We will return the best quality one (usually the first or look for 'hls')
+                    const m3u8 = fileMatches.find(m => m[1].includes('.m3u8'));
+                    if (m3u8) {
+                        return {
+                            url: m3u8[1],
+                            quality: `${name} (HLS)`,
+                            isM3U8: true
+                        };
+                    }
+                }
+            }
+
+            // 2. Fallback: Look for any m3u8 link in scripts
+            const m3u8Match = data.match(/(https?:\/\/[^\s"']+\.m3u8[^\s"']*)/);
+            if (m3u8Match) {
+                return {
+                    url: m3u8Match[0],
+                    quality: `${name} (Fallback)`,
+                    isM3U8: true
+                };
+            }
+            return null;
+        } catch (e) {
+            return null;
         }
     }
 }

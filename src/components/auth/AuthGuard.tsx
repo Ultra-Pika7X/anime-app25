@@ -13,13 +13,20 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         if (!loading) {
-            const isPublicPath = pathname === "/login" || pathname === "/signup";
+            const isPublicPath =
+                pathname === "/" ||
+                pathname.startsWith("/watch") ||
+                pathname.startsWith("/search") ||
+                pathname === "/login" ||
+                pathname === "/signup";
+
+            const isAuthPath = pathname === "/login" || pathname === "/signup";
 
             if (!user && !isPublicPath) {
                 // Not logged in and trying to access private route -> redirect to login
                 router.push("/login");
-            } else if (user && isPublicPath) {
-                // Logged in and trying to access public route -> redirect to home
+            } else if (user && isAuthPath) {
+                // Logged in and trying to access login/signup -> redirect to home
                 router.push("/");
             } else {
                 // Access granted
@@ -30,13 +37,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
     // Show loading while checking auth state or while redirecting
     if (loading || !isAuthorized) {
-        // Only show loading if we are not on a public path (to avoid flash on login page)
         const isPublicPath = pathname === "/login" || pathname === "/signup";
-
-        // If we are on public path and not loading, we technically should render, 
-        // but the effect might redirect logged in users.
-        // Simplifying: Just show loader until decision is made.
-
+        // To prevent flash, show loader.
         return (
             <div className="h-screen w-full flex items-center justify-center bg-black text-white">
                 <Loader2 className="w-10 h-10 animate-spin text-primary" />

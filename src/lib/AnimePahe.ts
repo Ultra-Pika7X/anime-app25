@@ -116,16 +116,26 @@ export class AnimePahe {
             const { data } = await axios.get(url, {
                 headers: { 'Referer': 'https://animepahe.ru/' }
             });
-            // Regex to find m3u8
-            // eval(function(p,a,c,k,e,d)...
-            // We need to decode playing logic?
-            // Usually Kwik uses packed JS.
-            // Simplified regex: /https:\/\/.*\.m3u8/
-            const match = data.match(/(https:\/\/.*\.m3u8)/);
-            if (match) return match[0];
+
+            // Regex for common Kwik source patterns
+            // 1. Check for straight m3u8 in script
+            const directMatch = data.match(/(https:\/\/.*\.m3u8)/);
+            if (directMatch) return directMatch[0];
+
+            // 2. Kwik often uses packed JS: eval(function(p,a,c,k,e,d)...
+            // We can often find the source even without full unpacking by looking at the strings
+            if (data.includes('eval(function(p,a,c,k,e,d)')) {
+                const sourceMatch = data.match(/source\s*=\s*(['"])(https?:\/\/.*?\.m3u8.*?)\1/);
+                if (sourceMatch) return sourceMatch[2];
+
+                // Try another pattern commonly found in packed kwik
+                const m3u8Match = data.match(/https?:\/\/[^'"]+\.m3u8[^'"]*/);
+                if (m3u8Match) return m3u8Match[0];
+            }
 
             return null;
         } catch (e) {
+            console.error("Kwik Extraction Failed:", e);
             return null;
         }
     }

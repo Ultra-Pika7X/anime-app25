@@ -1,16 +1,36 @@
 export interface MediaItem {
-    id: string | number;
-    title?: string;
-    name?: string; // For TV shows
-    poster_path: string | null;
-    backdrop_path: string | null;
-    overview: string;
-    vote_average: number;
-    release_date?: string;
-    first_air_date?: string;
-    media_type: "movie" | "tv" | "person";
-    genres?: { name: string }[];
-    runtime?: number;
+    id: number;
+    idMal?: number; // Optional mapping
+    title: {
+        romaji: string;
+        english: string;
+        native: string;
+    };
+    coverImage: {
+        extraLarge: string;
+        large: string;
+        medium: string;
+        color: string;
+    };
+    bannerImage?: string;
+    description?: string;
+    averageScore?: number;
+    genres?: string[];
+    type: 'ANIME' | 'MANGA';
+    format?: string;
+    status?: string;
+    nextAiringEpisode?: {
+        airingAt: number;
+        timeUntilAiring: number;
+        episode: number;
+    };
+    seasonYear?: number;
+    episodes?: number;
+    // Progress Tracking
+    progress?: number; // Current time in seconds
+    duration?: number; // Total duration in seconds
+    watchedEpisode?: number; // Episode number
+    timestamp?: number; // Last watched timestamp (Date.now())
 }
 
 export interface MediaResponse {

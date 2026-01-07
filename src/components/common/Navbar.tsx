@@ -67,15 +67,19 @@ export function Navbar() {
                             <button
                                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                                 className={cn(
-                                    "flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-200",
+                                    "flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-200 overflow-hidden",
                                     isDropdownOpen
                                         ? "bg-primary text-white border-primary shadow-[0_0_15px_rgba(97,82,223,0.5)]"
                                         : "bg-white/10 text-white hover:bg-white/20 border-white/10 hover:border-white/20"
                                 )}
                             >
-                                <span className="font-bold text-sm">
-                                    {user.displayName ? user.displayName[0].toUpperCase() : user.email ? user.email[0].toUpperCase() : "U"}
-                                </span>
+                                {user.avatar?.large ? (
+                                    <img src={user.avatar.large} alt={user.name} className="h-full w-full object-cover" />
+                                ) : (
+                                    <span className="font-bold text-sm">
+                                        {user.name ? user.name[0].toUpperCase() : "U"}
+                                    </span>
+                                )}
                             </button>
 
                             {/* Dropdown Menu */}
@@ -88,8 +92,7 @@ export function Navbar() {
                                     <div className="absolute right-0 mt-3 w-60 origin-top-right rounded-2xl border border-white/10 bg-[#0a0a0a]/95 backdrop-blur-2xl p-2 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-200">
                                         <div className="px-3 py-3 border-b border-white/5 mb-1">
                                             <p className="text-xs font-medium text-muted-foreground mb-1">Signed in as</p>
-                                            <p className="text-sm font-bold truncate text-white">{user.displayName || "User"}</p>
-                                            <p className="text-xs text-white/50 truncate">{user.email}</p>
+                                            <p className="text-sm font-bold truncate text-white">{user.name || "User"}</p>
                                         </div>
                                         <div className="mt-1 space-y-1">
                                             <Link

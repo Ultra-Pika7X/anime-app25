@@ -1,15 +1,16 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
-import { useLibrary, LibraryItem } from "@/context/LibraryContext";
+import { useLibrary } from "@/context/LibraryContext";
+import { MediaItem } from "@/types";
 import { Check, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner"; // If sonner is installed, otherwise standard alert/console
 
 interface WatchlistButtonProps {
-    item: LibraryItem;
+    item: MediaItem;
     className?: string;
-    variant?: "default" | "outline" | "ghost" | "secondary" | "link" | "destructive";
+    variant?: "default" | "outline" | "ghost" | "link";
     size?: "default" | "sm" | "lg" | "icon";
 }
 

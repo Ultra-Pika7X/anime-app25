@@ -1,11 +1,11 @@
 "use client";
 
-import { useWatchHistory } from "@/hooks/useWatchHistory";
+import { useLibrary } from "@/context/LibraryContext";
 import { MediaRow } from "@/components/common/MediaRow";
 import { useEffect, useState } from "react";
 
 export function ContinueWatchingRow() {
-    const { history } = useWatchHistory();
+    const { history } = useLibrary();
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {

@@ -17,14 +17,15 @@ import {
 const navItems = [
     { icon: Home, label: "Home", href: "/" },
     { icon: TrendingUp, label: "Trending", href: "/trending" },
+    { icon: Clock, label: "Schedule", href: "/schedule" },
     { icon: Film, label: "Movies", href: "/movie" },
     { icon: Tv, label: "TV Shows", href: "/tv" },
 ];
 
 const secondaryItems = [
     { icon: Library, label: "Library", href: "/library" },
-    { icon: Clock, label: "History", href: "/history" },
     { icon: Heart, label: "Watchlist", href: "/watchlist" },
+    { icon: Clock, label: "History", href: "/history" },
 ];
 
 export function Sidebar() {
@@ -40,7 +41,7 @@ export function Sidebar() {
                             key={item.href}
                             href={item.href}
                             className={cn(
-                                "flex h-12 w-full items-center gap-4 rounded-xl px-3 transition-all duration-300",
+                                "flex h-12 w-full items-center gap-4 rounded-xl px-3 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset",
                                 isActive
                                     ? "bg-primary text-white shadow-[0_0_20px_rgba(97,82,223,0.3)]"
                                     : "text-muted-foreground hover:bg-white/5 hover:text-white"
@@ -67,7 +68,7 @@ export function Sidebar() {
                             key={item.href}
                             href={item.href}
                             className={cn(
-                                "flex h-12 w-full items-center gap-4 rounded-xl px-3 transition-all duration-300",
+                                "flex h-12 w-full items-center gap-4 rounded-xl px-3 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset",
                                 isActive
                                     ? "bg-primary text-white"
                                     : "text-muted-foreground hover:bg-white/5 hover:text-white"

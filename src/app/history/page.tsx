@@ -28,13 +28,7 @@ export default function HistoryPage() {
             {history.length > 0 ? (
                 <MediaRow
                     title="" // No title needed as header says "Watch History"
-                    items={history.map(item => ({
-                        id: Number(item.id),
-                        title: item.title,
-                        poster_path: item.image,
-                        media_type: item.type,
-                        vote_average: 0
-                    }))}
+                    items={history}
                 />
             ) : (
                 <div className="flex flex-col items-center justify-center py-20 text-center">

@@ -1,4 +1,4 @@
-import { tmdb } from "@/lib/tmdb";
+import { anilist } from "@/lib/anilist";
 import { MediaCard } from "@/components/common/MediaCard";
 import { MediaItem } from "@/types";
 
@@ -14,8 +14,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
     if (query) {
         try {
-            const data = await tmdb.search(query);
-            results = data.results || [];
+            const data = await anilist.getSearch(query);
+            results = data?.data?.Page?.media || [];
         } catch (error) {
             console.error("Search failed", error);
         }
@@ -34,11 +34,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
             {results.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-6 gap-y-10">
-                    {results
-                        .filter((item: MediaItem) => item.poster_path && (item.media_type === "movie" || item.media_type === "tv" || !item.media_type))
-                        .map((item: MediaItem) => (
-                            <MediaCard key={item.id} item={item} />
-                        ))}
+                    {results.map((item: MediaItem) => (
+                        <MediaCard key={item.id} item={item} />
+                    ))}
                 </div>
             ) : (
                 <div className="flex flex-col items-center justify-center py-32 text-center bg-white/[0.02] border border-white/5 rounded-3xl">
