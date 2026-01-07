@@ -1,4 +1,5 @@
 import { scraper } from "@/lib/scraper";
+import { aniskip, SkipResponse } from "@/lib/aniskip";
 import { AnimePlayer } from "@/components/player/AnimePlayer";
 import { anilist } from "@/lib/anilist";
 import { Button } from "@/components/ui/Button";
@@ -42,6 +43,14 @@ export default async function WatchPage({ params }: PageProps) {
         console.error("Failed to get streams", e);
     }
 
+    // Fetch Skip Times (Intro/Outro)
+    let skipTimes: SkipResponse = {};
+    if (anime?.idMal) {
+        try {
+            skipTimes = await aniskip.getSkipTimes(anime.idMal, episodeNumber);
+        } catch (e) { console.error("Skip times error", e); }
+    }
+
     const title = anime.title.english || anime.title.romaji;
     const cover = anime.bannerImage || anime.coverImage.extraLarge;
 
@@ -69,14 +78,16 @@ export default async function WatchPage({ params }: PageProps) {
 
                 <AnimePlayer
                     sources={streams}
-                    malId={anilistId} // Using AniList ID as unique ID
+                    malId={anilistId}
                     episodeNumber={String(episodeNumber)}
                     title={`${title} - EP ${episodeNumber}`}
                     image={cover}
-                    type="tv" // Anime is usually treated as TV in player logic or just 'anime'
+                    type="tv"
                     autoPlay
                     className="w-full h-full"
                     anime={anime}
+                    intro={skipTimes?.op}
+                    outro={skipTimes?.ed}
                 />
             </div>
         </div>

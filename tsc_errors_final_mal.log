@@ -1,0 +1,4 @@
+src/lib/jikan.ts(124,10): error TS1472: 'catch' or 'finally' expected.
+src/lib/jikan.ts(134,1): error TS1109: Expression expected.
+src/lib/jikan.ts(134,2): error TS1005: ',' expected.
+src/lib/jikan.ts(135,1): error TS1005: '}' expected.

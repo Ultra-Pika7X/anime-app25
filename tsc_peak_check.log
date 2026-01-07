@@ -1,0 +1,12 @@
+src/components/player/AnimePlayer.tsx(371,52): error TS2339: Property 'startTime' does not exist on type '{ startTime: number; endTime: number; } | { start: number; end: number; }'.
+  Property 'startTime' does not exist on type '{ start: number; end: number; }'.
+src/components/player/AnimePlayer.tsx(371,86): error TS2339: Property 'endTime' does not exist on type '{ startTime: number; endTime: number; } | { start: number; end: number; }'.
+  Property 'endTime' does not exist on type '{ start: number; end: number; }'.
+src/components/player/AnimePlayer.tsx(374,59): error TS2339: Property 'startTime' does not exist on type '{ startTime: number; endTime: number; } | { start: number; end: number; }'.
+  Property 'startTime' does not exist on type '{ start: number; end: number; }'.
+src/components/player/AnimePlayer.tsx(374,93): error TS2339: Property 'endTime' does not exist on type '{ startTime: number; endTime: number; } | { start: number; end: number; }'.
+  Property 'endTime' does not exist on type '{ start: number; end: number; }'.
+src/components/player/AnimePlayer.tsx(425,37): error TS2339: Property 'endTime' does not exist on type '{ startTime: number; endTime: number; } | { start: number; end: number; }'.
+  Property 'endTime' does not exist on type '{ start: number; end: number; }'.
+src/components/player/AnimePlayer.tsx(427,37): error TS2339: Property 'endTime' does not exist on type '{ startTime: number; endTime: number; } | { start: number; end: number; }'.
+  Property 'endTime' does not exist on type '{ start: number; end: number; }'.

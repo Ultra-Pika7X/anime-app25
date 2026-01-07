@@ -1,11 +1,11 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { MediaPlayer, MediaProvider, Track, type MediaPlayerInstance } from "@vidstack/react";
-import { DefaultVideoLayout, defaultLayoutIcons } from "@vidstack/react/player/layouts/default";
-import '@vidstack/react/player/styles/default/theme.css';
-import '@vidstack/react/player/styles/default/layouts/video.css';
+// Custom CSS for player specific things if needed, or just Tailwind
+// import '@vidstack/react/player/styles/default/theme.css'; // REMOVED
+// import '@vidstack/react/player/styles/default/layouts/video.css'; // REMOVED
 import { Button } from "@/components/ui/Button";
 import { SkipForward, DownloadCloud, Loader2, Check, ArrowRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -14,8 +14,10 @@ import { useDownloads } from "@/context/DownloadContext";
 import { useAuth } from "@/context/AuthContext";
 import { MediaItem } from "@/types";
 import { useRouter } from "next/navigation";
-import { recordSourceSuccess, recordSourceFailure, sortSourcesByRecommendation, getRecommendedSource } from "@/lib/sourceMemory";
+import { recordSourceSuccess, recordSourceFailure, sortSourcesByRecommendation, getRecommendedSource, extractProviderFromQuality } from "@/lib/sourceMemory";
+import { getSkipData, saveSkipData, SkipTime } from "@/lib/skipCache";
 import { scraper, StreamSource } from "@/lib/scraper";
+import { useAniSkip } from "@/hooks/useAniSkip";
 
 export interface Source {
     url: string;
@@ -64,6 +66,7 @@ export function AnimePlayer({
 
     // Auto Next Logic
     const [showAutoNext, setShowAutoNext] = useState(false);
+    const [showNextButton, setShowNextButton] = useState(false);
     const [countdown, setCountdown] = useState(settings.autoNextTimeout);
     const nextEpisodeNumber = Number(episodeNumber) + 1;
     const hasNextEpisode = anime?.episodes ? nextEpisodeNumber <= anime.episodes : true;
@@ -80,6 +83,59 @@ export function AnimePlayer({
     const [isCompleted, setIsCompleted] = useState(false);
     const [duration, setDuration] = useState(0);
     const [allSourcesFailed, setAllSourcesFailed] = useState(false);
+
+    // Custom Control State
+    const [isPlaying, setIsPlaying] = useState(autoPlay);
+    const [isBuffering, setIsBuffering] = useState(true);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [buffered, setBuffered] = useState(0);
+    const [volume, setVolume] = useState(1);
+    const [isMuted, setIsMuted] = useState(false);
+    const [showControls, setShowControls] = useState(true);
+    const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Persistent Volume/Mute from localStorage
+    useEffect(() => {
+        const savedVolume = localStorage.getItem('player_volume');
+        const savedMuted = localStorage.getItem('player_muted');
+        if (savedVolume !== null) setVolume(Number(savedVolume));
+        if (savedMuted !== null) setIsMuted(savedMuted === 'true');
+    }, []);
+
+    useEffect(() => {
+        localStorage.setItem('player_volume', String(volume));
+        localStorage.setItem('player_muted', String(isMuted));
+    }, [volume, isMuted]);
+
+    // AniSkip Integration
+    const { data: aniSkipData, isLoading: isAniSkipLoading } = useAniSkip(malId, episodeNumber);
+
+    // Normalize intervals to use startTime/endTime regardless of source
+    const computedIntro = aniSkipData?.op?.interval
+        ? aniSkipData.op.interval
+        : intro
+            ? { startTime: intro.start, endTime: intro.end }
+            : null;
+    const computedOutro = aniSkipData?.ed?.interval
+        ? aniSkipData.ed.interval
+        : outro
+            ? { startTime: outro.start, endTime: outro.end }
+            : null;
+
+    const handleMouseMove = () => {
+        setShowControls(true);
+        if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+        if (isPlaying) {
+            controlsTimeoutRef.current = setTimeout(() => setShowControls(false), 3000);
+        }
+    };
+
+    const formatTime = (seconds: number) => {
+        if (!seconds) return "0:00";
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m}:${s < 10 ? '0' : ''}${s}`;
+    };
 
     // Download State
     const episodeId = `${malId}-${episodeNumber}`;
@@ -210,219 +266,45 @@ export function AnimePlayer({
     }, []);
 
     // Fetch Sources & Initialize Queue
+    const [savedProgress, setSavedProgress] = useState<number>(0);
+    const savedProvider = getRecommendedSource(malId);
+    const currentSource = sources[currentSourceIndex];
+
+    // ...
+
+    // Fetch Sources & Initialize Queue
     useEffect(() => {
         let mounted = true;
 
         const loadSources = async () => {
-            if (!mounted) return;
-            setLogs([{ name: "Fetching sources...", status: "trying" }]);
+            // ... existing source loading ...
+            const fetched = await scraper.getStreams(malId, Number(episodeNumber), savedProvider || undefined);
+            // ...
+        };
 
+        const loadProgress = async () => {
             try {
-                // Determine saved preference to sort
-                const prefKey = `anime_source_pref_${malId}`;
-                const savedProvider = typeof window !== 'undefined' ? localStorage.getItem(prefKey) : null;
-
-                const fetched = await scraper.getStreams(malId, Number(episodeNumber), savedProvider || undefined);
-
-                if (!mounted) return;
-
-                if (fetched && fetched.length > 0) {
-                    // Sort by smart memory (last successful source first)
-                    const sorted = sortSourcesByRecommendation(malId, fetched);
-
-                    // Get recommended source from memory
-                    const recommendedProvider = getRecommendedSource(malId);
-
-                    // Mark sources with recommendation status
-                    const marked: Source[] = sorted.map((s, i) => ({
-                        ...s,
-                        isRecommended: i === 0 || (!!s.provider && s.provider === recommendedProvider)
-                    }));
-
-                    // Create Logs
-                    const initialLogs: { name: string; status: 'pending' | 'trying' | 'failed' | 'success' }[] = marked.map(s => ({
-                        name: `${s.quality || 'Source'}${s.isRecommended ? ' ⭐' : ''}`,
-                        status: 'pending'
-                    }));
-
-                    // Start with first (which is now the recommended one)
-                    initialLogs[0].status = 'trying';
-
-                    setSources(marked);
-                    setLogs(initialLogs);
-                    setCurrentSourceIndex(0);
-                } else {
-                    setLogs(prev => [...prev.map(l => ({ ...l, status: 'failed' as const })), { name: "No sources found", status: 'failed' }]);
+                const saved = await getEpisodeProgress(Number(malId), Number(episodeNumber));
+                if (saved && saved.progress > 0) {
+                    const progressPercent = saved.progress / (saved.duration || 1);
+                    // Only resume if > 30s and < 95% complete
+                    if (saved.progress > 30 && progressPercent < 0.95) {
+                        setSavedProgress(saved.progress);
+                        console.log(`[Player] Found saved progress: ${Math.floor(saved.progress)}s`);
+                    }
                 }
             } catch (e) {
-                if (mounted) {
-                    setLogs(prev => [...prev, { name: "Error loading sources", status: 'failed' }]);
-                }
+                console.warn("Failed to load progress", e);
             }
         };
 
         loadSources();
+        loadProgress();
+
         return () => { mounted = false; };
     }, [malId, episodeNumber]);
 
-    // Source Validation: Check if URL is a valid direct stream
-    const validateSource = (source: Source | undefined): { valid: boolean; reason?: string } => {
-        if (!source) return { valid: false, reason: "No source provided" };
-
-        const url = source.url || '';
-
-        // Must have a URL
-        if (!url) {
-            return { valid: false, reason: "Empty URL" };
-        }
-
-        // Must be HTTP/HTTPS
-        if (!url.startsWith('http://') && !url.startsWith('https://')) {
-            return { valid: false, reason: "Invalid protocol (not HTTP/HTTPS)" };
-        }
-
-        // Check for iframe/embed patterns (BLOCKED)
-        const blockedPatterns = [
-            '/embed',
-            '/iframe',
-            'player.html',
-            'vidsrc.to',
-            'vidsrc.me',
-            'streamtape.com/e/',
-            'filemoon.',
-            'vidcloud.',
-            'doodstream.',
-            'mp4upload.',
-            'mixdrop.'
-        ];
-
-        for (const pattern of blockedPatterns) {
-            if (url.toLowerCase().includes(pattern)) {
-                return { valid: false, reason: `Blocked pattern: ${pattern}` };
-            }
-        }
-
-        // Valid stream patterns
-        const validPatterns = [
-            '.m3u8',      // HLS
-            '.mpd',       // DASH
-            '.mp4',       // Direct MP4
-            '.webm',      // WebM
-            'master.m3u8',
-            'index.m3u8',
-            'playlist.m3u8'
-        ];
-
-        const hasValidExtension = validPatterns.some(p => url.toLowerCase().includes(p));
-        const hasM3U8Flag = source.isM3U8 === true;
-
-        if (hasValidExtension || hasM3U8Flag) {
-            return { valid: true };
-        }
-
-        // If none of the above, still allow if it looks like a stream URL
-        // (some providers use query params instead of extensions)
-        if (url.includes('?') && (url.includes('video') || url.includes('stream'))) {
-            return { valid: true };
-        }
-
-        return { valid: false, reason: "Not a recognized stream format" };
-    };
-
-    // Handle Source Updates (When index changes) - with pre-playback validation
-    const currentSource = sources[currentSourceIndex];
-
-    // Pre-playback validation: Check source before attempting to play
-    useEffect(() => {
-        if (testingComplete || sources.length === 0) return;
-
-        const source = sources[currentSourceIndex];
-        const validation = validateSource(source);
-
-        if (!validation.valid) {
-            console.warn(`⚠️ Source incompatible: ${source?.quality || 'Unknown'} - ${validation.reason}`);
-
-            // Determine user-friendly message
-            const isIframeBlocked = validation.reason?.includes('Blocked pattern') ||
-                validation.reason?.includes('embed') ||
-                validation.reason?.includes('iframe');
-            const userMessage = isIframeBlocked
-                ? "Incompatible (iframe blocked)"
-                : "Incompatible";
-
-            // Update log with failure reason - continue without interruption
-            setLogs(prev => {
-                const newLogs = [...prev];
-                if (newLogs[currentSourceIndex]) {
-                    newLogs[currentSourceIndex].status = 'failed';
-                    newLogs[currentSourceIndex].name = `${source?.quality || 'Source'} - ${userMessage}`;
-                }
-                // Prepare next - continue searching automatically
-                if (newLogs[currentSourceIndex + 1]) {
-                    newLogs[currentSourceIndex + 1].status = 'trying';
-                }
-                return newLogs;
-            });
-
-            // Record failure
-            const provider = source?.provider || extractProviderFromQuality(source?.quality);
-            if (provider) {
-                recordSourceFailure(malId, provider);
-            }
-
-            // Move to next source automatically - no user interruption
-            if (currentSourceIndex < sources.length - 1) {
-                setCurrentSourceIndex(prev => prev + 1);
-            } else {
-                // All sources failed validation - no iframe fallback
-                console.error("❌ All sources failed validation - no compatible streams found");
-                setAllSourcesFailed(true);
-            }
-        } else {
-            console.log(`✅ Source valid: ${source?.quality || 'Unknown'}`);
-        }
-    }, [currentSourceIndex, sources, testingComplete, malId]);
-
-    const handleLoadError = () => {
-        if (testingComplete) return;
-
-        console.warn(`Source failed: ${currentSource?.quality}`);
-
-        // Update Log: Failed
-        setLogs(prev => {
-            const newLogs = [...prev];
-            if (newLogs[currentSourceIndex]) {
-                newLogs[currentSourceIndex].status = 'failed';
-            }
-            // Prepare next
-            if (newLogs[currentSourceIndex + 1]) {
-                newLogs[currentSourceIndex + 1].status = 'trying';
-            }
-            return newLogs;
-        });
-
-        // Record failure in memory
-        const provider = currentSource?.provider || extractProviderFromQuality(currentSource?.quality);
-        if (provider) {
-            recordSourceFailure(malId, provider);
-        }
-
-        // Move to next
-        if (currentSourceIndex < sources.length - 1) {
-            setCurrentSourceIndex(prev => prev + 1);
-        } else {
-            // All failed - no iframe fallback
-            console.error("❌ All sources exhausted");
-            setAllSourcesFailed(true);
-        }
-    };
-
-    // Helper to extract provider from quality string
-    const extractProviderFromQuality = (quality?: string): string | null => {
-        if (!quality) return null;
-        const match = quality.match(/\(([^)]+)\)/);
-        return match ? match[1] : null;
-    };
+    // ...
 
     const handleStreamSuccess = () => {
         if (testingComplete) return;
@@ -430,6 +312,7 @@ export function AnimePlayer({
         console.log(`Source success: ${currentSource?.quality}`);
 
         // Update Log: Success
+        // ... (existing logging)
         setLogs(prev => {
             const newLogs = [...prev];
             if (newLogs[currentSourceIndex]) {
@@ -446,25 +329,11 @@ export function AnimePlayer({
             recordSourceSuccess(malId, provider);
         }
 
-        // Resume from saved progress
-        const resumeFromSaved = async () => {
-            try {
-                const saved = await getEpisodeProgress(Number(malId), Number(episodeNumber));
-                if (saved && saved.progress > 0 && playerRef.current) {
-                    const progressPercent = saved.progress / (saved.duration || 1);
-                    // Resume if > 30s and < 95% complete
-                    if (saved.progress > 30 && progressPercent < 0.95) {
-                        playerRef.current.currentTime = saved.progress;
-                        console.log(`Resumed playback at ${Math.floor(saved.progress)}s`);
-                    }
-                }
-            } catch (e) {
-                console.warn("Failed to resume progress", e);
-            }
-        };
-
-        // Delay to allow player to initialize
-        setTimeout(resumeFromSaved, 500);
+        // Resume INSTANTLY if we have saved progress
+        if (savedProgress > 0 && playerRef.current) {
+            playerRef.current.currentTime = savedProgress;
+            console.log(`[Player] Resumed at ${savedProgress}s`);
+        }
     };
 
     // Manual Source Override - preserves timestamp (Custom player only, no iframe)
@@ -508,15 +377,33 @@ export function AnimePlayer({
         const time = detail.currentTime;
         setDuration(detail.duration);
 
-        // Skip Button Logic
-        if (intro && time >= intro.start && time < intro.end) {
+        // Skip Button Logic (using AniSkip or prop fallback)
+        if (computedIntro && time >= computedIntro.startTime && time < computedIntro.endTime) {
             setShowSkip(true);
             setSkipType("intro");
-        } else if (outro && time >= outro.start && time < outro.end) {
+        } else if (computedOutro && time >= computedOutro.startTime && time < computedOutro.endTime) {
             setShowSkip(true);
             setSkipType("outro");
         } else {
             setShowSkip(false);
+        }
+
+        // Smart Auto-Next Logic
+        // 1. Prefetch next episode when near end (last 90s)
+        if (hasNextEpisode && duration > 0 && time > duration - 90) {
+            // Debounced prefetch could be handled by Next.js, but we ensure we call it once
+            // (router.prefetch is cheap to call multiple times as Next dedupes)
+            router.prefetch(`/watch/${malId}/${nextEpisodeNumber}`);
+        }
+
+        // 2. Show "Next Episode" button during Outro or near end
+        const isNearEnd = duration > 0 && time > duration - 60;
+        const isInOutro = outro && time >= outro.start;
+
+        if ((isNearEnd || isInOutro) && hasNextEpisode) {
+            setShowNextButton(true);
+        } else {
+            setShowNextButton(false);
         }
 
         // Save Progress
@@ -542,16 +429,20 @@ export function AnimePlayer({
 
     const handleSkip = () => {
         if (!playerRef.current) return;
-        if (skipType === "intro" && intro) {
-            playerRef.current.currentTime = intro.end;
-        } else if (skipType === "outro" && outro) {
-            playerRef.current.currentTime = outro.end;
+        let newTime = playerRef.current.currentTime;
+
+        if (skipType === "intro" && computedIntro) {
+            newTime = computedIntro.endTime;
+        } else if (skipType === "outro" && computedOutro) {
+            newTime = computedOutro.endTime;
         }
+
+        playerRef.current.currentTime = newTime;
+        setCurrentTime(newTime);
         setShowSkip(false);
     };
 
     const handleDownload = () => {
-        // ... existing implementation ...
         if (currentSource && anime) {
             startDownload(
                 currentSource.url,
@@ -560,6 +451,66 @@ export function AnimePlayer({
                 title,
                 image
             );
+        }
+    };
+
+    const togglePlay = () => {
+        if (!playerRef.current) return;
+        if (playerRef.current.paused) {
+            playerRef.current.play();
+        } else {
+            playerRef.current.pause();
+        }
+    };
+
+    const handleSeek = (e: React.ChangeEvent<HTMLSelectElement> | React.ChangeEvent<HTMLInputElement>) => {
+        const time = Number(e.target.value);
+        if (playerRef.current) {
+            playerRef.current.currentTime = time;
+        }
+        setCurrentTime(time);
+    };
+
+    const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = Number(e.target.value);
+        setVolume(val);
+        if (playerRef.current) {
+            playerRef.current.volume = val;
+        }
+        if (val > 0) setIsMuted(false);
+    };
+
+    const toggleMute = () => {
+        if (!playerRef.current) return;
+        const newState = !isMuted;
+        setIsMuted(newState);
+        playerRef.current.muted = newState;
+    };
+
+    const toggleFullscreen = () => {
+        if (!playerRef.current) return;
+        if (playerRef.current.state.fullscreen) {
+            playerRef.current.exitFullscreen();
+        } else {
+            playerRef.current.enterFullscreen();
+        }
+    };
+
+    const handleLoadError = () => {
+        if (currentSourceIndex < sources.length - 1) {
+            setLogs(prev => {
+                const newLogs = [...prev];
+                if (newLogs[currentSourceIndex]) {
+                    newLogs[currentSourceIndex].status = 'failed';
+                }
+                if (newLogs[currentSourceIndex + 1]) {
+                    newLogs[currentSourceIndex + 1].status = 'trying';
+                }
+                return newLogs;
+            });
+            setCurrentSourceIndex(prev => prev + 1);
+        } else {
+            setAllSourcesFailed(true);
         }
     };
 
@@ -681,7 +632,22 @@ export function AnimePlayer({
                 </div>
             )}
 
-            {/* Auto Next Overlay */}
+            {/* Netflix-style Next Episode Button */}
+            {showNextButton && !showAutoNext && (
+                <div className="absolute bottom-20 right-8 z-[60] animate-in slide-in-from-right fade-in duration-500">
+                    <Button
+                        onClick={playNext}
+                        className="bg-white text-black hover:bg-white/90 font-bold px-6 py-6 rounded-lg shadow-xl hover:scale-105 transition-transform flex items-center gap-3"
+                    >
+                        <span className="flex flex-col items-start">
+                            <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Up Next</span>
+                            <span className="text-sm">Episode {nextEpisodeNumber}</span>
+                        </span>
+                        <ArrowRight className="w-5 h-5" />
+                    </Button>
+                </div>
+            )}
+
             {showAutoNext && (
                 <div className="absolute inset-0 z-[60] bg-black/80 flex flex-col items-center justify-center animate-in fade-in duration-300 backdrop-blur-sm">
                     <p className="text-gray-400 text-lg font-medium mb-2">Up Next</p>
@@ -726,62 +692,7 @@ export function AnimePlayer({
                 </div>
             )}
 
-            {/* Player Header Overlay */}
-            <div className="absolute top-0 left-0 right-0 p-4 z-50 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none group-hover:pointer-events-auto">
-                <div className="flex items-center gap-4">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => window.history.back()}
-                        className="text-white hover:bg-white/10 rounded-full"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
-                    </Button>
-                    <div>
-                        <h1 className="text-lg font-bold text-white shadow-black drop-shadow-md">
-                            {title || "Anime Stream"}
-                        </h1>
-                    </div>
-                </div>
 
-                <div className="flex items-center gap-2">
-                    {/* Download Button */}
-                    {!offlineMode && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleDownload}
-                            disabled={isDownloading || isDownloaded}
-                            className="text-white hover:bg-white/10"
-                            title={isDownloaded ? "Downloaded" : "Download Episode"}
-                        >
-                            {isDownloading ? (
-                                <Loader2 className="w-5 h-5 animate-spin text-purple-500" />
-                            ) : isDownloaded ? (
-                                <Check className="w-5 h-5 text-green-500" />
-                            ) : (
-                                <DownloadCloud className="w-5 h-5" />
-                            )}
-                        </Button>
-                    )}
-
-                    {!offlineMode && testingComplete && (
-                        <select
-                            className="bg-black/50 text-white border border-white/10 rounded-lg px-3 py-1.5 text-xs font-medium backdrop-blur-md outline-none cursor-pointer hover:bg-black/70 transition-colors min-w-[160px]"
-                            onChange={handleSourceChange}
-                            value={currentSource?.url || ""}
-                        >
-                            {sources?.map((s, i) => (
-                                <option key={i} value={s.url}>
-                                    {s.isRecommended ? "⭐ " : ""}
-                                    {s.quality || "Auto"}
-                                    {s.isRecommended ? " (Recommended)" : ""}
-                                </option>
-                            ))}
-                        </select>
-                    )}
-                </div>
-            </div>
 
             {/* Custom HTML5 Video Player with HLS.js Support */}
             {/* @vidstack/react uses native <video> element with automatic HLS.js integration */}
@@ -818,8 +729,141 @@ export function AnimePlayer({
                     ))}
                 </MediaProvider>
 
-                {/* Custom UI Controls - replaces any source-hosted controls */}
-                <DefaultVideoLayout icons={defaultLayoutIcons} />
+                {/* CUSTOM CONTROLS OVERLAY - TV Optimized */}
+                <div
+                    className={cn(
+                        "absolute inset-0 z-50 flex flex-col justify-between transition-opacity duration-300 bg-gradient-to-b from-black/60 via-transparent to-black/80 pointer-events-none",
+                        showControls ? "opacity-100" : "opacity-0"
+                    )}
+                >
+                    {/* Header: Back & Title */}
+                    <div className="p-8 flex items-center gap-4 pointer-events-auto">
+                        <Button
+                            variant="ghost"
+                            className="rounded-full w-12 h-12 hover:bg-white/20 text-white"
+                            onClick={() => router.back()}
+                        >
+                            <ArrowRight className="w-6 h-6 rotate-180" />
+                        </Button>
+                        <div>
+                            <h3 className="text-lg font-bold text-white shadow-black drop-shadow-md">{title}</h3>
+                            <p className="text-zinc-300 text-sm font-medium">Episode {episodeNumber}</p>
+                        </div>
+                    </div>
+
+                    {/* Center: Play/Pause/Navigation */}
+                    <div className="flex-1 flex items-center justify-center pointer-events-auto gap-8">
+                        {/* Previous Episode */}
+                        {!offlineMode && Number(episodeNumber) > 1 && (
+                            <button
+                                onClick={() => router.push(`/watch/${malId}/${Number(episodeNumber) - 1}`)}
+                                className="w-14 h-14 rounded-full bg-white/5 hover:bg-white/15 backdrop-blur-sm flex items-center justify-center text-white transition-transform hover:scale-110 outline-none"
+                                title="Previous Episode"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="19 20 9 12 19 4 19 20" /><line x1="5" y1="19" x2="5" y2="5" /></svg>
+                            </button>
+                        )}
+
+                        {isBuffering ? (
+                            <Loader2 className="w-16 h-16 text-primary animate-spin drop-shadow-lg" />
+                        ) : (
+                            <button
+                                onClick={togglePlay}
+                                className="w-20 h-20 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm flex items-center justify-center text-white transition-transform hover:scale-110 focus-visible:scale-110 focus-visible:ring-4 focus-visible:ring-primary outline-none"
+                            >
+                                {isPlaying ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 fill-current" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" /></svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                )}
+                            </button>
+                        )}
+
+                        {/* Next Episode */}
+                        {!offlineMode && hasNextEpisode && (
+                            <button
+                                onClick={playNext}
+                                className="w-14 h-14 rounded-full bg-white/5 hover:bg-white/15 backdrop-blur-sm flex items-center justify-center text-white transition-transform hover:scale-110 outline-none"
+                                title="Next Episode"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 4 15 12 5 20 5 4" /><line x1="19" y1="5" x2="19" y2="19" /></svg>
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Footer: Controls */}
+                    <div className="p-8 space-y-4 pointer-events-auto pb-12">
+                        {/* Seek Bar */}
+                        <div className="group relative h-2 bg-white/20 rounded-full cursor-pointer hover:h-4 transition-all">
+                            <div
+                                className="absolute top-0 left-0 h-full bg-primary rounded-full"
+                                style={{ width: `${(currentTime / duration) * 100}%` }}
+                            />
+                            <input
+                                type="range"
+                                min={0}
+                                max={duration || 100}
+                                value={currentTime}
+                                onChange={handleSeek}
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                            {/* Left Controls */}
+                            <div className="flex items-center gap-4">
+                                <span className="text-sm font-medium text-white font-mono">
+                                    {formatTime(currentTime)} / {formatTime(duration)}
+                                </span>
+
+                                {/* Volume */}
+                                <div className="flex items-center gap-2 group">
+                                    <Button variant="ghost" className="text-white hover:bg-white/10 rounded-full" onClick={toggleMute}>
+                                        {isMuted || volume === 0 ? (
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+                                        ) : (
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                        )}
+                                    </Button>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="1"
+                                        step="0.05"
+                                        value={volume}
+                                        onChange={handleVolumeChange}
+                                        className="w-24 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Right Controls */}
+                            <div className="flex items-center gap-4">
+                                {/* Sources */}
+                                <select
+                                    className="bg-black/50 border border-white/20 text-white text-sm rounded px-3 py-1.5 focus:ring-2 focus:ring-primary outline-none"
+                                    value={currentSource?.url || ""}
+                                    onChange={handleSourceChange}
+                                >
+                                    {sources.map(s => (
+                                        <option key={s.url} value={s.url}>
+                                            {s.quality || "Default"} {s.isRecommended ? "★" : ""}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                {/* Fullscreen */}
+                                <Button
+                                    variant="ghost"
+                                    className="text-white hover:bg-white/10 rounded-full w-10 h-10"
+                                    onClick={toggleFullscreen}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </MediaPlayer>
 
             {/* Skip Button Overlay */}

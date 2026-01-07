@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/common/Sidebar";
 import { Navbar } from "@/components/common/Navbar";
 import { MobileNav } from "@/components/common/MobileNav";
+import { NotificationManager } from "@/components/common/NotificationManager";
 
 export function Shell({ children }: { children: React.ReactNode }) {
     const { user, loading } = useAuth();
@@ -33,6 +34,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 </main>
             </div>
             <MobileNav />
+            <NotificationManager />
         </div>
     );
 }

@@ -1,154 +1,126 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { anilist } from "@/lib/anilist";
+import { useState } from "react";
+import { ScheduleCalendar } from "@/components/schedule/ScheduleCalendar";
+import { format, startOfDay, endOfDay, getUnixTime } from "date-fns";
 import { MediaCard } from "@/components/common/MediaCard";
+import { Loader2 } from "lucide-react";
 import { useLibrary } from "@/context/LibraryContext";
-import { cn } from "@/lib/utils";
-import { Loader2, Calendar as CalendarIcon, Clock } from "lucide-react";
-import { format, addDays, startOfDay, getDay } from "date-fns";
-import { Button } from "@/components/ui/Button";
-
-interface AiringEpisode {
-    id: number;
-    airingAt: number;
-    episode: number;
-    media: any;
-}
-
-const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 export default function SchedulePage() {
-    const { isInWatchlist } = useLibrary();
-    const [schedule, setSchedule] = useState<Record<number, AiringEpisode[]>>({});
-    const [loading, setLoading] = useState(true);
-    const [selectedDay, setSelectedDay] = useState(getDay(new Date())); // Default to today
+    const [selectedDate, setSelectedDate] = useState(new Date());
+    const { mediaList, addToWatchlist, isInWatchlist } = useLibrary();
 
-    useEffect(() => {
-        const fetchSchedule = async () => {
-            setLoading(true);
-            try {
-                // Fetch for a wide range (e.g., -1 to +7 days) to cover all timezones well
-                // Actually, let's just do start of today to +6 days (7 days total)
-                const now = new Date();
-                const start = Math.floor(startOfDay(now).getTime() / 1000);
-                const end = Math.floor(addDays(startOfDay(now), 7).getTime() / 1000);
+    const { data, isLoading } = useQuery({
+        queryKey: ["schedule", format(selectedDate, 'yyyy-MM-dd')],
+        queryFn: async () => {
+            const start = getUnixTime(startOfDay(selectedDate));
+            const end = getUnixTime(endOfDay(selectedDate));
+            return anilist.getAiringSchedule(start, end, 1, 50);
+        }
+    });
 
-                // We might needpagination if there are tons, but a week usually fits in one or two standard request pages (50 per page).
-                // Let's fetch 2 pages to be safe (100 items).
-                const data1 = await anilist.getAiringSchedule(start, end, 1, 50);
-                const data2 = data1?.Page?.pageInfo?.hasNextPage
-                    ? await anilist.getAiringSchedule(start, end, 2, 50)
-                    : null;
+    const schedule = data?.Page?.airingSchedules || [];
 
-                let all: AiringEpisode[] = data1?.Page?.airingSchedules || [];
-                if (data2?.Page?.airingSchedules) {
-                    all = [...all, ...data2.Page.airingSchedules];
-                }
-
-                // Group by Day of Week (Local Time)
-                const grouped: Record<number, AiringEpisode[]> = {};
-                all.forEach(item => {
-                    const date = new Date(item.airingAt * 1000);
-                    const day = getDay(date);
-                    if (!grouped[day]) grouped[day] = [];
-                    grouped[day].push(item);
-                });
-
-                // Sort by time within day
-                Object.keys(grouped).forEach(key => {
-                    grouped[Number(key)].sort((a, b) => a.airingAt - b.airingAt);
-                });
-
-                setSchedule(grouped);
-            } catch (e) {
-                console.error("Failed to fetch schedule", e);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchSchedule();
-    }, []);
-
-    // Create ordered list of days starting from today for the tabs?
-    // Or just standard Sun-Sat order?
-    // User usually wants to see "Today" first.
-    // Let's rearrange days array to start with SelectedDay? No, just keep standard order but select Today.
-    // Or maybe separate "Today" from others.
-
-    // Let's use standard order for Tabs, but scroll to active?
+    // Helper to format airing time
+    const formatTime = (timestamp: number) => {
+        return format(new Date(timestamp * 1000), 'h:mm a');
+    };
 
     return (
-        <div className="min-h-screen pt-24 pb-20 container animate-in fade-in duration-500">
-            <div className="flex items-center gap-4 mb-8">
-                <CalendarIcon className="w-8 h-8 text-primary" />
-                <h1 className="text-3xl font-bold">Airing Schedule</h1>
-            </div>
-
-            {/* Day Tabs */}
-            <div className="flex overflow-x-auto pb-4 gap-2 mb-8 no-scrollbar mask-linear-fade">
-                {DAYS.map((dayName, index) => {
-                    const isActive = selectedDay === index;
-                    const isToday = index === getDay(new Date());
-                    return (
-                        <Button
-                            key={dayName}
-                            variant={isActive ? "default" : "outline"}
-                            onClick={() => setSelectedDay(index)}
-                            className={cn(
-                                "whitespace-nowrap px-6 rounded-full transition-all",
-                                isActive ? "shadow-lg shadow-primary/25" : "hover:bg-white/10"
-                            )}
-                        >
-                            {dayName} {isToday && <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-white/20 rounded">TODAY</span>}
-                        </Button>
-                    );
-                })}
-            </div>
-
-            {loading ? (
-                <div className="flex h-64 items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="min-h-screen pt-24 pb-20 px-4 md:px-8 space-y-8 animate-in fade-in duration-500">
+            <div className="max-w-7xl mx-auto space-y-6">
+                <div>
+                    <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400">
+                        Airing Schedule
+                    </h1>
+                    <p className="text-zinc-400">Keep track of new episodes airing today.</p>
                 </div>
-            ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                    {schedule[selectedDay]?.length > 0 ? (
-                        schedule[selectedDay].map((item) => {
-                            const isMyList = isInWatchlist(item.media.id);
-                            const time = format(new Date(item.airingAt * 1000), "h:mm a");
+
+                <ScheduleCalendar
+                    selectedDate={selectedDate}
+                    onSelectDate={setSelectedDate}
+                />
+
+                {isLoading ? (
+                    <div className="flex justify-center py-20">
+                        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                    </div>
+                ) : schedule.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {schedule.map((item: any) => {
+                            const isTracked = isInWatchlist(item.media.id);
 
                             return (
-                                <div key={item.id} className="relative group">
-                                    <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground font-mono">
-                                        <div className="flex items-center gap-1">
-                                            <Clock className="w-3 h-3" />
-                                            {time}
+                                <div key={item.id} className="group relative bg-zinc-900/40 rounded-xl p-4 border border-white/5 hover:border-primary/50 transition-colors flex gap-4 overflow-hidden">
+                                    {/* Time Stripe */}
+                                    {isTracked && (
+                                        <div className="absolute top-0 right-0 p-2">
+                                            <span className="bg-primary/20 text-primary text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider border border-primary/20">
+                                                My List
+                                            </span>
                                         </div>
-                                        <span className="text-primary font-bold">Ep {item.episode}</span>
+                                    )}
+
+                                    <div className="w-[80px] flex-shrink-0">
+                                        <div className="aspect-[2/3] relative rounded-md overflow-hidden shadow-lg">
+                                            <img
+                                                src={item.media.coverImage.large}
+                                                alt={item.media.title.english || item.media.title.romaji}
+                                                className="absolute inset-0 w-full h-full object-cover"
+                                            />
+                                        </div>
                                     </div>
 
-                                    <div className={cn("relative p-0.5 rounded-xl transition-all", isMyList ? "bg-gradient-to-br from-primary via-purple-500 to-blue-500 shadow-lg shadow-primary/20" : "")}>
-                                        <MediaCard
-                                            item={item.media}
-                                        // Override click to go to watch/anime page? MediaCard handles it via ID.
-                                        />
-                                        {isMyList && (
-                                            <div className="absolute top-2 right-2 z-20 bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
-                                                WATCHING
-                                            </div>
-                                        )}
+                                    <div className="flex-1 flex flex-col justify-center min-w-0 pointer-events-none group-hover:pointer-events-auto">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-lg font-bold text-white tabular-nums">
+                                                {formatTime(item.airingAt)}
+                                            </span>
+                                            <span className="text-zinc-500 text-xs font-medium px-2 py-0.5 bg-white/5 rounded">
+                                                EP {item.episode}
+                                            </span>
+                                        </div>
+
+                                        <h3 className="font-semibold text-zinc-200 line-clamp-2 text-sm leading-tight mb-2 group-hover:text-primary transition-colors">
+                                            {item.media.title.english || item.media.title.romaji}
+                                        </h3>
+
+                                        <div className="flex items-center gap-2 mt-auto">
+                                            <a
+                                                href={`/anime/${item.media.id}`}
+                                                className="text-xs font-medium text-zinc-500 hover:text-white transition-colors"
+                                            >
+                                                Details
+                                            </a>
+                                            {!isTracked && (
+                                                <button
+                                                    onClick={() => addToWatchlist(item.media)}
+                                                    className="text-xs font-bold text-primary hover:text-primary/80 transition-colors"
+                                                >
+                                                    + Track
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             );
-                        })
-                    ) : (
-                        <div className="col-span-full h-40 flex items-center justify-center text-muted-foreground">
-                            No episodes airing on this day.
+                        })}
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+                        <div className="w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center">
+                            <span className="text-2xl">💤</span>
                         </div>
-                    )}
-                </div>
-            )}
+                        <h3 className="text-xl font-medium text-white">No episodes airing today</h3>
+                        <p className="text-zinc-500 max-w-md">
+                            Take a break! Or verify if you have traveled to the future.
+                        </p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

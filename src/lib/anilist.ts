@@ -43,6 +43,26 @@ export interface AnilistMedia {
         };
         averageScore?: number;
         format?: string;
+        type?: string;
+      };
+    }>;
+  };
+  relations?: {
+    edges: Array<{
+      relationType: string;
+      node: {
+        id: number;
+        title: {
+          romaji: string;
+          english: string;
+          native: string;
+        };
+        format: string;
+        type: string;
+        status: string;
+        coverImage: {
+          medium: string;
+        };
       };
     }>;
   };
@@ -224,6 +244,7 @@ export const anilist = {
             format
             type
             seasonYear
+            idMal
           }
         }
       }
@@ -269,7 +290,7 @@ export const anilist = {
             timeUntilAiring
             episode
           }
-          recommendations {
+          recommendations(sort: RATING_DESC, page: 1, perPage: 25) {
              nodes {
                 mediaRecommendation {
                    id
@@ -280,8 +301,33 @@ export const anilist = {
                    coverImage {
                       medium
                    }
+                   type
+                   format
+                   status
+                   averageScore
+                   idMal
                 }
              }
+          }
+          relations {
+            edges {
+              relationType(version: 2)
+              node {
+                id
+                title {
+                  romaji
+                  english
+                  native
+                }
+                format
+                type
+                status
+                coverImage {
+                  medium
+                }
+                idMal
+              }
+            }
           }
         }
       }
@@ -322,6 +368,7 @@ export const anilist = {
               progress
               media {
                 id
+                idMal
                 title {
                   romaji
                   english

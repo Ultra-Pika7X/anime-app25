@@ -10,6 +10,7 @@ export function CurrentlyWatchingRow() {
         .filter((item: any) => item.status === "CURRENT")
         .map((item: any) => ({
             id: Number(item.media.id),
+            idMal: item.media.idMal,
             title: item.media.title,
             coverImage: item.media.coverImage,
             type: item.media.type || 'ANIME',

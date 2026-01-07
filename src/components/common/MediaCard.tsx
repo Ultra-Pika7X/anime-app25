@@ -1,8 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 import { MediaItem } from "@/types";
 import { cn } from "@/lib/utils";
 import { Star } from "lucide-react";
+import { AnimeImage } from "@/components/ui/AnimeImage";
 
 interface MediaCardProps {
     item: MediaItem;
@@ -14,30 +14,36 @@ export function MediaCard({ item, className, type }: MediaCardProps) {
     const title = item.title?.english || item.title?.romaji || item.title?.native || "Untitled";
     const year = item.seasonYear || "";
     const mediaType = "anime"; // or use item.format
-    const href = `/watch/${item.id}`; // Direct to watch page for now
+    const href = item.watchedEpisode
+        ? `/watch/${item.id}/${item.watchedEpisode}`
+        : `/watch/${item.id}`;
 
     return (
         <Link
             href={href}
-            className={cn("group relative flex flex-col gap-2 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-[--radius]", className)}
+            className={cn(
+                "group relative flex flex-col gap-2 transition-all duration-300",
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-[--radius]",
+                "hover:translate-y-[-4px] hover:z-10",
+                className
+            )}
         >
-            <div className="relative aspect-[2/3] w-full overflow-hidden rounded-[--radius] bg-muted shadow-lg bg-[#111111]">
-                {item.coverImage?.extraLarge || item.coverImage?.large ? (
-                    <Image
-                        src={item.coverImage.extraLarge || item.coverImage.large}
-                        alt={title}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-110 group-hover:opacity-40"
-                        sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
-                    />
-                ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-secondary text-muted-foreground">
-                        No Image
-                    </div>
-                )}
+            <div className={cn(
+                "relative aspect-[2/3] w-full overflow-hidden rounded-[--radius] bg-muted shadow-lg bg-[#111111]",
+                "ring-1 ring-white/5 group-hover:ring-2 group-hover:ring-primary/50 group-hover:shadow-[0_0_30px_rgba(139,92,246,0.3)] transition-all duration-300"
+            )}>
+                <AnimeImage
+                    src={item.coverImage?.large}
+                    variants={[item.coverImage?.extraLarge, item.coverImage?.medium]}
+                    malId={item.idMal}
+                    alt={title}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-110 group-focus-visible:scale-110 group-hover:opacity-40 group-focus-visible:opacity-40"
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                />
 
                 {/* Overlay Content on Hover or Focus */}
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 p-4 text-center">
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100 p-4 text-center bg-black/40 backdrop-blur-[2px]">
                     <div className="bg-primary/90 text-white rounded-full p-2 mb-2 scale-50 group-hover:scale-100 group-focus-visible:scale-100 transition-transform duration-300">
                         <Star className="h-6 w-6 fill-current" />
                     </div>
@@ -55,7 +61,23 @@ export function MediaCard({ item, className, type }: MediaCardProps) {
                             EP {item.nextAiringEpisode.episode}
                         </span>
                     )}
+                    {item.watchedEpisode && (
+                        <span className="rounded-[4px] bg-purple-600/90 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md shadow-lg">
+                            EP {item.watchedEpisode}
+                        </span>
+                    )}
                 </div>
+
+                {/* Progress Bar (Netflix Style) */}
+                {item.progress && item.duration && (
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/50 z-20">
+                        <div
+                            className="h-full bg-red-600 shadow-[0_0_10px_rgba(220,38,38,0.7)]"
+                            style={{ width: `${Math.min(100, (item.progress / item.duration) * 100)}%` }}
+                        />
+                    </div>
+                )}
+
 
                 {item.averageScore ? (
                     <div className="absolute bottom-2 right-2 rounded-[4px] bg-primary/90 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm z-20 shadow-lg">

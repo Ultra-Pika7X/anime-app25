@@ -9,6 +9,7 @@ export interface SourceStats {
     provider: string;
     successCount: number;
     lastUsed: number;
+    avgLoadTime?: number;
 }
 
 export interface AnimeSourceMemory {
@@ -82,7 +83,7 @@ export function getSourceRanking(animeId: string): SourceStats[] {
 /**
  * Record a successful source play
  */
-export function recordSourceSuccess(animeId: string, provider: string): void {
+export function recordSourceSuccess(animeId: string, provider: string, loadTimeMs: number = 0): void {
     const all = getAllMemory();
 
     if (!all[animeId]) {
@@ -99,13 +100,23 @@ export function recordSourceSuccess(animeId: string, provider: string): void {
     // Find or create source stats
     const existing = memory.sources.find(s => s.provider === provider);
     if (existing) {
+        // Calculate rolling average
+        const oldAvg = existing.avgLoadTime || 0;
+        const count = existing.successCount;
+
+        // New Average = ((OldAvg * Count) + NewTime) / (Count + 1)
+        if (loadTimeMs > 0) {
+            existing.avgLoadTime = Math.round(((oldAvg * count) + loadTimeMs) / (count + 1));
+        }
+
         existing.successCount++;
         existing.lastUsed = Date.now();
     } else {
         memory.sources.push({
             provider,
             successCount: 1,
-            lastUsed: Date.now()
+            lastUsed: Date.now(),
+            avgLoadTime: loadTimeMs
         });
     }
 
@@ -136,8 +147,8 @@ export function sortSourcesByRecommendation<T extends { provider?: string; quali
     }
 
     return [...sources].sort((a, b) => {
-        const provA = a.provider || extractProvider(a.quality);
-        const provB = b.provider || extractProvider(b.quality);
+        const provA = a.provider || extractProviderFromQuality(a.quality);
+        const provB = b.provider || extractProviderFromQuality(b.quality);
 
         // 1. Last successful source first
         if (provA === recommended && provB !== recommended) return -1;
@@ -159,7 +170,7 @@ export function sortSourcesByRecommendation<T extends { provider?: string; quali
 /**
  * Extract provider name from quality string (e.g., "1080p (AnimePahe)" -> "AnimePahe")
  */
-function extractProvider(quality?: string): string | null {
+export function extractProviderFromQuality(quality?: string): string | null {
     if (!quality) return null;
     const match = quality.match(/\(([^)]+)\)/);
     return match ? match[1] : null;

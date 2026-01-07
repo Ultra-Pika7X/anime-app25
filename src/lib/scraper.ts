@@ -4,8 +4,9 @@ import { HiAnime } from './HiAnime';
 import { AllAnime } from './AllAnime';
 import { AnimeFox } from './AnimeFox';
 import { KickAssAnime } from './KickAssAnime';
-import { calculateSimilarity } from './utils';
+import { calculateLevenshteinSimilarity } from './levenshtein';
 import { getRecommendedSource, getSourceRanking } from './sourceMemory';
+import { StreamGuard } from './streamGuard';
 
 const animepahe = new AnimePahe();
 const gogoanime = new Gogoanime();
@@ -54,7 +55,7 @@ export const scraper = {
                 fn: async () => {
                     const search = await hianime.search(title);
                     // Use new fuzzy matching (0.8 threshold)
-                    const best = search.results.find(r => calculateSimilarity(r.title, title) >= 0.8) || search.results[0];
+                    const best = search.results.find(r => calculateLevenshteinSimilarity(r.title, title) >= 0.8) || search.results[0];
                     if (best) {
                         const info = await hianime.fetchAnimeInfo(best.id);
                         const ep = info.episodes.find((e: any) => e.number === episodeNumber);
@@ -67,7 +68,7 @@ export const scraper = {
                 name: "AnimePahe",
                 fn: async () => {
                     const search = await animepahe.search(title);
-                    const best = search.results.find((r: any) => calculateSimilarity(r.title, title) >= 0.8) || search.results[0];
+                    const best = search.results.find((r: any) => calculateLevenshteinSimilarity(r.title, title) >= 0.8) || search.results[0];
                     if (best) {
                         const info = await animepahe.fetchAnimeInfo(best.id);
                         const ep = info.episodes.find((e: any) => e.number === episodeNumber);
@@ -81,7 +82,7 @@ export const scraper = {
                 fn: async () => {
                     try {
                         const search = await allanime.search(title);
-                        const best = search.results.find((r: any) => calculateSimilarity(r.title, title) >= 0.8) || search.results[0];
+                        const best = search.results.find((r: any) => calculateLevenshteinSimilarity(r.title, title) >= 0.8) || search.results[0];
                         if (best) {
                             const info = await allanime.fetchAnimeInfo(best.id);
                             if (!info) return null;
@@ -96,7 +97,7 @@ export const scraper = {
                 name: "Gogoanime",
                 fn: async () => {
                     const search = await gogoanime.search(title);
-                    const best = search.results.find((r: any) => calculateSimilarity(r.title, title) >= 0.8) || search.results[0];
+                    const best = search.results.find((r: any) => calculateLevenshteinSimilarity(r.title, title) >= 0.8) || search.results[0];
                     if (best) {
                         const info = await gogoanime.fetchAnimeInfo(best.id);
                         if (!info) return null;
@@ -155,11 +156,11 @@ export const scraper = {
 
                 if (res && res.sources && res.sources.length > 0) {
                     const validSources = res.sources.filter((s: any) => {
-                        const url = s.url || '';
-                        const isIframe = url.includes('/embed') || url.includes('/iframe') || url.includes('vidsrc') || url.includes('ss.php');
-                        // Relaxed validation: accept if it has sources, but deprioritize iframes if possible
-                        // For now accepting all, but marking them
-                        return true;
+                        const validation = StreamGuard.validate(s.url, s.isM3U8 || s.url.includes('.m3u8'));
+                        if (!validation.valid) {
+                            // console.log(`[StreamGuard] Blocked ${prov.name} source: ${validation.reason} (${s.url})`);
+                        }
+                        return validation.valid;
                     }).map((s: any) => ({
                         url: s.url,
                         quality: s.quality || 'Auto',
@@ -232,7 +233,7 @@ export const scraper = {
 
         try {
             const search = await hianime.search(title);
-            const best = search.results.find(r => calculateSimilarity(r.title, title) >= 0.8) || search.results[0];
+            const best = search.results.find(r => calculateLevenshteinSimilarity(r.title, title) >= 0.8) || search.results[0];
             if (best) {
                 const info = await hianime.fetchAnimeInfo(best.id);
                 return info.episodes;

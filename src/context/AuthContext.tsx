@@ -21,7 +21,11 @@ export interface AppSettings {
     autoNextTimeout: number; // seconds
     autoSyncAniList: boolean;
     preferredSource: string; // "navtive", "720p", "1080p", etc. or source ID
+    enableSkipIntro?: boolean;
+    enableAutoSkip?: boolean; // Auto-click skip button
 }
+
+// ...
 
 interface AuthContextType {
     user: AniListUser | null;
@@ -29,7 +33,7 @@ interface AuthContextType {
     loading: boolean;
     settings: AppSettings;
     updateSettings: (settings: Partial<AppSettings>) => void;
-    login: (token: string) => Promise<void>;
+    login: (accessToken: string) => Promise<void>;
     logout: () => void;
 }
 
@@ -41,7 +45,9 @@ const AuthContext = createContext<AuthContextType>({
         autoNext: true,
         autoNextTimeout: 5,
         autoSyncAniList: true,
-        preferredSource: "default"
+        preferredSource: "default",
+        enableSkipIntro: true,
+        enableAutoSkip: false
     },
     updateSettings: () => { },
     login: async () => { },
@@ -56,7 +62,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         autoNext: true,
         autoNextTimeout: 5,
         autoSyncAniList: true,
-        preferredSource: "default"
+        preferredSource: "default",
+        enableSkipIntro: true,
+        enableAutoSkip: false
     });
     const router = useRouter();
 

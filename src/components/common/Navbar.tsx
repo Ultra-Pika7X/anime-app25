@@ -44,6 +44,11 @@ export function Navbar() {
                             CloudAnime
                         </span>
                     </Link>
+                    <nav className="hidden md:flex items-center gap-6">
+                        <Link href="/schedule" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors focus-visible:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded px-2 py-1">
+                            Schedule
+                        </Link>
+                    </nav>
                 </div>
 
                 <div className="flex flex-1 items-center justify-center max-w-xl">
@@ -54,7 +59,7 @@ export function Navbar() {
                             placeholder="Search anime..."
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            className="h-10 w-full rounded-full border border-white/10 bg-white/5 pl-11 pr-4 text-sm text-white placeholder:text-muted-foreground focus:border-primary/50 focus:bg-white/10 focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+                            className="h-10 w-full rounded-full border border-white/10 bg-white/5 pl-11 pr-4 text-sm text-white placeholder:text-muted-foreground focus:border-primary/50 focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                         />
                     </form>
                 </div>

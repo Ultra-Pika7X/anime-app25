@@ -120,9 +120,18 @@ export const jikan = {
                 ...mapped,
                 genres: data.genres?.map((g: any) => ({ id: g.mal_id, name: g.name })) || [],
                 recommendations: { results: [] } // TODO: Implement recommendations
-            }
+            };
         } catch (e) {
             console.error("Jikan details error:", e);
+            return null;
+        }
+    },
+    getAnimeImage: async (id: string | number) => {
+        try {
+            const { data } = await fetchJikan(`/anime/${id}`);
+            return data?.images?.jpg?.large_image_url || data?.images?.jpg?.image_url || null;
+        } catch (e) {
+            console.error("Jikan image fetch error:", e);
             return null;
         }
     },

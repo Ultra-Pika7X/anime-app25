@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
-import { Play, RotateCw, Settings as SettingsIcon, Trash2, Database, Monitor } from "lucide-react";
+import { Play, RotateCw, Settings as SettingsIcon, Trash2, Database, Monitor, SkipForward } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { dbService } from "@/lib/db";
@@ -89,6 +89,34 @@ export default function SettingsPage() {
                                 <SimpleSwitch
                                     checked={settings.autoNext}
                                     onCheckedChange={(val) => updateSettings({ autoNext: val })}
+                                />
+                            </div>
+
+                            {/* Skip Intro */}
+                            <div className="flex items-center justify-between border-t border-white/5 pt-6">
+                                <div className="space-y-0.5">
+                                    <div className="text-base font-medium text-white flex items-center gap-2">
+                                        <SkipForward className="h-4 w-4" /> Enable Skip Intro/Outro
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">Show "Skip Intro" button when available.</p>
+                                </div>
+                                <SimpleSwitch
+                                    checked={settings.enableSkipIntro ?? true}
+                                    onCheckedChange={(val) => updateSettings({ enableSkipIntro: val })}
+                                />
+                            </div>
+
+                            {/* Auto Skip */}
+                            <div className="flex items-center justify-between border-t border-white/5 pt-6">
+                                <div className="space-y-0.5">
+                                    <div className="text-base font-medium text-white flex items-center gap-2">
+                                        <Play className="h-4 w-4" /> Auto-Skip Streaming
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">Automatically skip intros without asking (Experimental).</p>
+                                </div>
+                                <SimpleSwitch
+                                    checked={settings.enableAutoSkip ?? false}
+                                    onCheckedChange={(val) => updateSettings({ enableAutoSkip: val })}
                                 />
                             </div>
 

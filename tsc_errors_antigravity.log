@@ -1,0 +1,18 @@
+src/components/player/AnimePlayer.tsx(94,32): error TS2554: Expected 1 arguments, but got 0.
+src/components/player/AnimePlayer.tsx(250,84): error TS2304: Cannot find name 'savedProvider'.
+src/components/player/AnimePlayer.tsx(281,40): error TS2304: Cannot find name 'currentSource'.
+src/components/player/AnimePlayer.tsx(296,26): error TS2304: Cannot find name 'currentSource'.
+src/components/player/AnimePlayer.tsx(296,53): error TS2304: Cannot find name 'extractProviderFromQuality'.
+src/components/player/AnimePlayer.tsx(296,80): error TS2304: Cannot find name 'currentSource'.
+src/components/player/AnimePlayer.tsx(416,13): error TS2304: Cannot find name 'currentSource'.
+src/components/player/AnimePlayer.tsx(418,17): error TS2304: Cannot find name 'currentSource'.
+src/components/player/AnimePlayer.tsx(612,26): error TS2304: Cannot find name 'currentSource'.
+src/components/player/AnimePlayer.tsx(613,27): error TS2304: Cannot find name 'currentSource'.
+src/components/player/AnimePlayer.tsx(620,26): error TS2304: Cannot find name 'handleLoadError'.
+src/components/player/AnimePlayer.tsx(670,42): error TS2304: Cannot find name 'togglePlay'.
+src/components/player/AnimePlayer.tsx(695,43): error TS2304: Cannot find name 'handleSeek'.
+src/components/player/AnimePlayer.tsx(709,124): error TS2304: Cannot find name 'toggleMute'.
+src/components/player/AnimePlayer.tsx(710,42): error TS2304: Cannot find name 'muted'.
+src/components/player/AnimePlayer.tsx(722,51): error TS2304: Cannot find name 'handleVolumeChange'.
+src/components/player/AnimePlayer.tsx(733,44): error TS2304: Cannot find name 'currentSource'.
+src/components/player/AnimePlayer.tsx(747,46): error TS2304: Cannot find name 'toggleFullscreen'.
