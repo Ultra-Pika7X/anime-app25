@@ -21,25 +21,36 @@ interface DownloadsDB extends DBSchema {
 }
 
 class DownloadManager {
-    private dbPromise: Promise<IDBPDatabase<DownloadsDB>>;
+    private dbPromise: Promise<IDBPDatabase<DownloadsDB>> | null = null;
     private root: FileSystemDirectoryHandle | null = null;
     private abortControllers: Map<string, AbortController> = new Map();
 
-    constructor() {
-        this.dbPromise = openDB<DownloadsDB>('anime-downloads', 1, {
-            upgrade(db) {
-                db.createObjectStore('downloads', { keyPath: 'id' });
-            },
-        });
-        // Init OPFS root
-        if (typeof navigator !== 'undefined' && navigator.storage) {
-            navigator.storage.getDirectory().then(root => {
-                this.root = root;
-            }).catch(e => console.error("OPFS not supported", e));
+    private getDB(): Promise<IDBPDatabase<DownloadsDB>> {
+        if (typeof window === 'undefined') {
+            return Promise.reject(new Error('IndexedDB not available on server'));
+        }
+        if (!this.dbPromise) {
+            this.dbPromise = openDB<DownloadsDB>('anime-downloads', 1, {
+                upgrade(db) {
+                    db.createObjectStore('downloads', { keyPath: 'id' });
+                },
+            });
+        }
+        return this.dbPromise;
+    }
+
+    private async initRoot() {
+        if (typeof navigator !== 'undefined' && navigator.storage && !this.root) {
+            try {
+                this.root = await navigator.storage.getDirectory();
+            } catch (e) {
+                console.error("OPFS not supported", e);
+            }
         }
     }
 
     async startDownload(url: string, metadata: Omit<DownloadMetadata, 'status' | 'progress' | 'timestamp' | 'fileName'>, onProgress?: (p: number) => void) {
+        await this.initRoot();
         if (!this.root) return; // OPFS not ready
 
         const id = metadata.id;
@@ -47,7 +58,7 @@ class DownloadManager {
         const controller = new AbortController();
         this.abortControllers.set(id, controller);
 
-        const db = await this.dbPromise;
+        const db = await this.getDB();
         await db.put('downloads', {
             ...metadata,
             fileName,
@@ -130,8 +141,9 @@ class DownloadManager {
     }
 
     async deleteDownload(id: string) {
-        const db = await this.dbPromise;
+        const db = await this.getDB();
         const item = await db.get('downloads', id);
+        await this.initRoot();
         if (item && this.root) {
             try {
                 await this.root.removeEntry(item.fileName);
@@ -143,10 +155,11 @@ class DownloadManager {
     }
 
     async getDownloadUrl(id: string): Promise<string | null> {
+        await this.initRoot();
         if (!this.root) return null;
         try {
             // We need to resolve file handle
-            const db = await this.dbPromise;
+            const db = await this.getDB();
             const item = await db.get('downloads', id);
             if (!item || item.status !== 'completed') return null;
 
@@ -160,7 +173,8 @@ class DownloadManager {
     }
 
     async getAllDownloads() {
-        const db = await this.dbPromise;
+        if (typeof window === 'undefined') return [];
+        const db = await this.getDB();
         return db.getAll('downloads');
     }
 }
