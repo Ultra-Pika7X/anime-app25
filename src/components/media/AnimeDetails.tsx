@@ -177,6 +177,7 @@ export function AnimeDetails({ anime }: AnimeDetailsProps) {
                     totalEpisodes={totalEpisodes}
                     bannerImage={banner}
                     relations={relations}
+                    title={title}
                 />
 
                 {/* Recommendations */}

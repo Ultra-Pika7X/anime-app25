@@ -15,9 +15,10 @@ interface EpisodeListProps {
     totalEpisodes: number;
     bannerImage?: string;
     relations?: any[]; // AniList relations
+    title?: string;
 }
 
-export function EpisodeList({ animeId, malId, totalEpisodes, bannerImage, relations }: EpisodeListProps) {
+export function EpisodeList({ animeId, malId, totalEpisodes, bannerImage, relations, title }: EpisodeListProps) {
     const { getEpisodeProgress, updateStatus } = useLibrary();
     const { downloads } = useDownloads(); // Assumes this context exists and works
 
@@ -36,7 +37,7 @@ export function EpisodeList({ animeId, malId, totalEpisodes, bannerImage, relati
             try {
                 const prefKey = `anime_source_pref_${animeId}`;
                 const savedProvider = localStorage.getItem(prefKey) || undefined;
-                const data = await scraper.getEpisodes(String(animeId), savedProvider);
+                const data = await scraper.getEpisodes(malId ? String(malId) : String(animeId), savedProvider, title);
 
                 if (mounted) {
                     if (data && data.length > 0) {

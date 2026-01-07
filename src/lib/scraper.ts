@@ -54,8 +54,8 @@ export const scraper = {
                 name: "HiAnime",
                 fn: async () => {
                     const search = await hianime.search(title);
-                    // Use new fuzzy matching (0.8 threshold)
-                    const best = search.results.find(r => calculateLevenshteinSimilarity(r.title, title) >= 0.8) || search.results[0];
+                    // Use new fuzzy matching (0.6 threshold)
+                    const best = search.results.find(r => calculateLevenshteinSimilarity(r.title, title) >= 0.6) || search.results[0];
                     if (best) {
                         const info = await hianime.fetchAnimeInfo(best.id);
                         const ep = info.episodes.find((e: any) => e.number === episodeNumber);
@@ -68,7 +68,7 @@ export const scraper = {
                 name: "AnimePahe",
                 fn: async () => {
                     const search = await animepahe.search(title);
-                    const best = search.results.find((r: any) => calculateLevenshteinSimilarity(r.title, title) >= 0.8) || search.results[0];
+                    const best = search.results.find((r: any) => calculateLevenshteinSimilarity(r.title, title) >= 0.6) || search.results[0];
                     if (best) {
                         const info = await animepahe.fetchAnimeInfo(best.id);
                         const ep = info.episodes.find((e: any) => e.number === episodeNumber);
@@ -82,7 +82,7 @@ export const scraper = {
                 fn: async () => {
                     try {
                         const search = await allanime.search(title);
-                        const best = search.results.find((r: any) => calculateLevenshteinSimilarity(r.title, title) >= 0.8) || search.results[0];
+                        const best = search.results.find((r: any) => calculateLevenshteinSimilarity(r.title, title) >= 0.6) || search.results[0];
                         if (best) {
                             const info = await allanime.fetchAnimeInfo(best.id);
                             if (!info) return null;
@@ -97,7 +97,7 @@ export const scraper = {
                 name: "Gogoanime",
                 fn: async () => {
                     const search = await gogoanime.search(title);
-                    const best = search.results.find((r: any) => calculateLevenshteinSimilarity(r.title, title) >= 0.8) || search.results[0];
+                    const best = search.results.find((r: any) => calculateLevenshteinSimilarity(r.title, title) >= 0.6) || search.results[0];
                     if (best) {
                         const info = await gogoanime.fetchAnimeInfo(best.id);
                         if (!info) return null;
@@ -106,8 +106,41 @@ export const scraper = {
                     }
                     return null;
                 }
+            },
+            {
+                name: "AnimeFox",
+                fn: async () => {
+                    try {
+                        const search = await animefox.search(title);
+                        const best = search.results.find((r: any) => calculateLevenshteinSimilarity(r.title, title) >= 0.6) || search.results[0];
+                        if (best) {
+                            const info = await animefox.fetchAnimeInfo(best.id);
+                            if (!info) return null;
+                            const ep = info.episodes.find((e: any) => e.number === episodeNumber);
+                            if (ep) return await animefox.fetchEpisodeSources(ep.id);
+                        }
+                    } catch (e) { console.warn("AnimeFox failed", e); }
+                    return null;
+                }
+            },
+            {
+                name: "KickAssAnime",
+                fn: async () => {
+                    try {
+                        const search = await kaa.search(title);
+                        const best = search.results.find((r: any) => calculateLevenshteinSimilarity(r.title, title) >= 0.8) || search.results[0];
+                        if (best) {
+                            const info = await kaa.fetchAnimeInfo(best.id);
+                            if (!info) return null;
+                            const ep = info.episodes.find((e: any) => e.number === episodeNumber);
+                            if (ep) return await kaa.fetchEpisodeSources(ep.id);
+                        }
+                    } catch (e) { console.warn("KickAssAnime failed", e); }
+                    return null;
+                }
             }
         ];
+
 
         // INTELLIGENT SORTING
         // 1. User Preference
@@ -215,31 +248,39 @@ export const scraper = {
                     solved = true;
                     resolve([]);
                 }
-            }, 10000);
+            }, 15000);
         });
     },
-    async getEpisodes(malId: string, providerPref?: string): Promise<Episode[]> {
-        let title = "";
-        try {
-            const jikanRes = await fetch(`https://api.jikan.moe/v4/anime/${malId}`);
-            const jikanData = await jikanRes.json();
-            title = jikanData.data?.title_english || jikanData.data?.title;
-            if (title) title = title.split(' (')[0].split(' - ')[0].trim();
-        } catch (e) {
-            console.error("[Scraper] Failed to resolve title for episodes:", malId);
+    async getEpisodes(malId: string, providerPref?: string, titleArg?: string): Promise<Episode[]> {
+        let title = (titleArg || "").split(' (')[0].split(' - ')[0].trim();
+
+        if (!title && malId) {
+            try {
+                const jikanRes = await fetch(`https://api.jikan.moe/v4/anime/${malId}`);
+                const jikanData = await jikanRes.json();
+                title = jikanData.data?.title_english || jikanData.data?.title;
+                if (title) title = title.split(' (')[0].split(' - ')[0].trim();
+            } catch (e) {
+                console.error("[Scraper] Failed to resolve title for episodes:", malId);
+            }
         }
 
         if (!title) return [];
 
-        try {
-            const search = await hianime.search(title);
-            const best = search.results.find(r => calculateLevenshteinSimilarity(r.title, title) >= 0.8) || search.results[0];
-            if (best) {
-                const info = await hianime.fetchAnimeInfo(best.id);
-                return info.episodes;
+        const providers = [hianime, gogoanime, animepahe];
+
+        for (const provider of providers) {
+            try {
+                const search = await provider.search(title);
+                const best = search.results.find((r: any) => calculateLevenshteinSimilarity(r.title, title) >= 0.6) || search.results[0];
+                if (best) {
+                    const info = await provider.fetchAnimeInfo(best.id);
+                    // @ts-ignore
+                    if (info.episodes && info.episodes.length > 0) return info.episodes;
+                }
+            } catch (e) {
+                // console.warn("[Scraper] Provider failed for episodes", e);
             }
-        } catch (e) {
-            console.error("[Scraper] getEpisodes failed:", e);
         }
 
         return [];
