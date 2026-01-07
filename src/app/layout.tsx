@@ -4,6 +4,7 @@ import "./globals.css";
 import { Shell } from "@/components/layout/Shell";
 import { AuthProvider } from "@/context/AuthContext";
 import { LibraryProvider } from "@/context/LibraryContext";
+import { DownloadProvider } from "@/context/DownloadContext";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
 import AuthGuard from "@/components/auth/AuthGuard";
@@ -44,13 +45,15 @@ export default function RootLayout({
         >
           <AuthProvider>
             <LibraryProvider>
-              <QueryProvider>
-                <AuthGuard>
-                  <Shell>
-                    {children}
-                  </Shell>
-                </AuthGuard>
-              </QueryProvider>
+              <DownloadProvider>
+                <QueryProvider>
+                  <AuthGuard>
+                    <Shell>
+                      {children}
+                    </Shell>
+                  </AuthGuard>
+                </QueryProvider>
+              </DownloadProvider>
             </LibraryProvider>
           </AuthProvider>
           <CacheInit />
