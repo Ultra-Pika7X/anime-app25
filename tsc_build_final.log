@@ -1,0 +1,18 @@
+src/components/player/AnimePlayer.tsx(159,31): error TS7006: Parameter 'prev' implicitly has an 'any' type.
+src/context/AuthContext.tsx(7,11): error TS2304: Cannot find name 'AniListUser'.
+src/context/AuthContext.tsx(11,15): error TS2304: Cannot find name 'AppSettings'.
+src/context/AuthContext.tsx(12,40): error TS2304: Cannot find name 'AppSettings'.
+src/context/AuthContext.tsx(17,21): error TS2304: Cannot find name 'createContext'.
+src/context/AuthContext.tsx(36,29): error TS2304: Cannot find name 'useState'.
+src/context/AuthContext.tsx(36,38): error TS2304: Cannot find name 'AniListUser'.
+src/context/AuthContext.tsx(37,45): error TS2304: Cannot find name 'useState'.
+src/context/AuthContext.tsx(38,31): error TS2304: Cannot find name 'useState'.
+src/context/AuthContext.tsx(39,35): error TS2304: Cannot find name 'useState'.
+src/context/AuthContext.tsx(40,37): error TS2304: Cannot find name 'useState'.
+src/context/AuthContext.tsx(40,46): error TS2304: Cannot find name 'AppSettings'.
+src/context/AuthContext.tsx(48,20): error TS2304: Cannot find name 'useRouter'.
+src/context/AuthContext.tsx(51,5): error TS2304: Cannot find name 'useEffect'.
+src/context/AuthContext.tsx(71,5): error TS2304: Cannot find name 'useEffect'.
+src/context/AuthContext.tsx(90,50): error TS2304: Cannot find name 'AppSettings'.
+src/context/AuthContext.tsx(98,32): error TS2304: Cannot find name 'anilist'.
+src/context/AuthContext.tsx(144,30): error TS2304: Cannot find name 'useContext'.

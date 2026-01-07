@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import { AnilistLogin } from "@/components/auth/AnilistLogin";
 import { Button } from "@/components/ui/Button";
 import { Play, RotateCw, Settings as SettingsIcon, Trash2, Database, Monitor, SkipForward } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -154,7 +155,11 @@ export default function SettingsPage() {
                                         <RotateCw className="h-4 w-4" /> Auto-Sync with AniList
                                     </div>
                                     <p className="text-sm text-muted-foreground">Automatically update your AniList progress as you watch (requires login).</p>
-                                    {!user && <p className="text-xs text-yellow-500">You must be logged in to use this.</p>}
+                                    {!user && (
+                                        <div className="mt-2">
+                                            <AnilistLogin />
+                                        </div>
+                                    )}
                                 </div>
                                 <SimpleSwitch
                                     checked={settings.autoSyncAniList}

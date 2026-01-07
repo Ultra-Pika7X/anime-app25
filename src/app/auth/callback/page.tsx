@@ -21,7 +21,7 @@ export default function AuthCallback() {
                 .then(() => {
                     router.push("/");
                 })
-                .catch((err) => {
+                .catch((err: any) => {
                     console.error("Login failed during callback:", err);
                     router.push("/?error=login_failed");
                 });

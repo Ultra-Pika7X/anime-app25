@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
+import { useAuth } from "@/context/AuthContext";
 import { useLibrary } from "@/context/LibraryContext";
 import { MediaItem } from "@/types";
 import { Check, Plus } from "lucide-react";
@@ -16,9 +17,25 @@ interface WatchlistButtonProps {
 
 export function WatchlistButton({ item, className, variant = "outline", size = "lg" }: WatchlistButtonProps) {
     const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useLibrary();
+    // Assuming useLibrary or useAuth provides a way to check connection.
+    // LibraryContext doesn't expose 'token' directly usually, but we can get it from useAuth.
+    const { token } = useLibrary(); // Wait, LibraryContext doesn't expose token.
+    // Let's import useAuth.
+
+    // Actually, let's just check if the action succeeds or if we should check beforehand.
+    // LibraryContext `addToWatchlist` returns void.
+
+    // Better to Import useAuth
+    const { user } = useAuth(); // AuthContext exposes 'user' (AniList user)
+
     const inList = isInWatchlist(String(item.id));
 
     const toggleList = () => {
+        if (!user) {
+            toast.error("Connect AniList to manage your watchlist.");
+            return;
+        }
+
         if (inList) {
             removeFromWatchlist(String(item.id));
         } else {

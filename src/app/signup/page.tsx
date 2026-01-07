@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -40,10 +41,24 @@ export default function SignupPage() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center px-4 py-12">
-            <div className="relative w-full max-w-md">
+        <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center">
+            {/* Background Image */}
+            <div className="absolute inset-0 z-0">
+                <Image
+                    src="https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=3872&auto=format&fit=crop"
+                    alt="Anime Background"
+                    fill
+                    className="object-cover"
+                    priority
+                    quality={90}
+                />
+                {/* Dark Overlay */}
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
+            </div>
+
+            <div className="relative z-10 w-full max-w-md px-4">
                 {/* Background Glow */}
-                <div className="absolute -inset-1 rounded-[2rem] bg-gradient-to-r from-primary/50 to-purple-600/50 opacity-20 blur-2xl transition duration-1000 group-hover:opacity-40" />
+                <div className="absolute -inset-1 rounded-[2rem] bg-gradient-to-r from-primary/50 to-purple-600/50 opacity-20 blur-2xl transition duration-1000" />
 
                 <div className="relative flex flex-col gap-8 rounded-[2rem] border border-white/10 bg-black/40 p-8 backdrop-blur-2xl shadow-2xl md:p-10">
                     <div className="flex flex-col gap-2 text-center">
