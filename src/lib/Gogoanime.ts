@@ -3,7 +3,8 @@ import axios from 'axios';
 import { load } from 'cheerio';
 
 export class Gogoanime {
-    protected baseUrl = 'https://anitaku.pe'; // Current working domain
+    protected baseUrl = 'https://anitaku.to'; // Current working domain
+    protected backupDomains = ['https://anitaku.bz', 'https://gogoanime3.co']; // TODO: Implement fallback logic
     protected ajaxUrl = 'https://ajax.gogocdn.net/ajax';
 
     async search(query: string) {
@@ -158,11 +159,15 @@ export class Gogoanime {
             // 2. Fallback: Look for any m3u8 link in scripts
             const m3u8Match = data.match(/(https?:\/\/[^\s"']+\.m3u8[^\s"']*)/);
             if (m3u8Match) {
-                return {
-                    url: m3u8Match[0],
-                    quality: `${name} (Fallback)`,
-                    isM3U8: true
-                };
+                // Ignore some obvious ad-related or invalid m3u8 if they appear
+                const url = m3u8Match[0];
+                if (!url.includes('google') && !url.includes('analytics')) {
+                    return {
+                        url: url,
+                        quality: `${name} (HLS Fallback)`,
+                        isM3U8: true
+                    };
+                }
             }
             return null;
         } catch (e) {

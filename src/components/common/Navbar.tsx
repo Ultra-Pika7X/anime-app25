@@ -13,7 +13,7 @@ export function Navbar() {
     const [query, setQuery] = useState("");
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const router = useRouter();
-    const { user, logout } = useAuth();
+    const { user, firebaseUser, logout } = useAuth();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -65,9 +65,7 @@ export function Navbar() {
                 </div>
 
                 <div className="flex items-center gap-3">
-
-
-                    {user ? (
+                    {(user || firebaseUser) ? (
                         <div className="relative">
                             <button
                                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -78,11 +76,15 @@ export function Navbar() {
                                         : "bg-white/10 text-white hover:bg-white/20 border-white/10 hover:border-white/20"
                                 )}
                             >
-                                {user.avatar?.large ? (
-                                    <img src={user.avatar.large} alt={user.name} className="h-full w-full object-cover" />
+                                {(user?.avatar?.large || firebaseUser?.photoURL) ? (
+                                    <img
+                                        src={user?.avatar?.large || firebaseUser?.photoURL || ""}
+                                        alt={user?.name || firebaseUser?.displayName || "User"}
+                                        className="h-full w-full object-cover"
+                                    />
                                 ) : (
                                     <span className="font-bold text-sm">
-                                        {user.name ? user.name[0].toUpperCase() : "U"}
+                                        {(user?.name || firebaseUser?.displayName || "U")[0].toUpperCase()}
                                     </span>
                                 )}
                             </button>
@@ -97,7 +99,7 @@ export function Navbar() {
                                     <div className="absolute right-0 mt-3 w-60 origin-top-right rounded-2xl border border-white/10 bg-[#0a0a0a]/95 backdrop-blur-2xl p-2 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-200">
                                         <div className="px-3 py-3 border-b border-white/5 mb-1">
                                             <p className="text-xs font-medium text-muted-foreground mb-1">Signed in as</p>
-                                            <p className="text-sm font-bold truncate text-white">{user.name || "User"}</p>
+                                            <p className="text-sm font-bold truncate text-white">{user?.name || firebaseUser?.displayName || firebaseUser?.email || "User"}</p>
                                         </div>
                                         <div className="mt-1 space-y-1">
                                             <Link

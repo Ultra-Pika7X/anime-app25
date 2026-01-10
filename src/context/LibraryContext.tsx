@@ -313,24 +313,38 @@ export const LibraryProvider = ({ children }: { children: React.ReactNode }) => 
     };
 
     const getEpisodeProgress = async (animeId: number, episode: number) => {
-        // Check local first
+        // 1. Check local DB first
         const local = await dbService.getEpisodeProgress(animeId, episode);
         if (local) return local;
 
-        // Fallback to remote if online and not found locally (e.g. new device)
-        // But only do this ONCE per session/mount? 
-        // For now, rely on local + initial sync if we eventually implement full sync. 
-        // Or fetch specific doc if needed. but usually we just return undefined and start from 0.
-        // Let's check remote ONCE if user is logged in?
-        // Actually, for "Continue Watching" row, we use History.
-        // For "Resume", we use this.
-        // Let's implement a single fetch check for remote if local is missing.
+        // 2. Fallback to Remote Firestore (if online and logged in)
         if (user && db) {
-            // ... logic to fetch single doc ...
-            // For spark plan, maybe skip this or do it only on player load.
-            // We can assume if it's not in dbService (which syncs history), maybe we don't have it.
-            // But progress is separate.
+            try {
+                const userId = user.id.toString();
+                const docId = `${animeId}_${episode}`;
+                const docRef = doc(db, "users", userId, "episode_progress", docId);
+                const snapshot = await getDoc(docRef);
+
+                if (snapshot.exists()) {
+                    const data = snapshot.data();
+                    // Save to local for next time
+                    await dbService.saveEpisodeProgress(
+                        animeId,
+                        episode,
+                        data.progress,
+                        data.duration
+                    );
+                    return {
+                        ...data,
+                        animeId,
+                        episode
+                    };
+                }
+            } catch (e) {
+                console.error("Failed to fetch remote progress", e);
+            }
         }
+
         return undefined;
     };
 

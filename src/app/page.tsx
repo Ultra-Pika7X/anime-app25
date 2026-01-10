@@ -96,7 +96,6 @@ export default async function Home() {
       {/* Rows */}
       <div className="relative z-20 -mt-10 space-y-10 pl-4 md:pl-0">
         <ContinueWatchingRow />
-        <CurrentlyWatchingRow />
         <MediaRow title="Trending Now" items={trendingAnimes} type="tv" />
         <MediaRow title="Recently Updated" items={recentAnimes} type="tv" />
         <MediaRow title="Popular All Time" items={popularAnimes} type="tv" />

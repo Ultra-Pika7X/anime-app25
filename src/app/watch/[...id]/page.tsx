@@ -54,8 +54,6 @@ export default async function WatchPage({ params }: PageProps) {
     const title = anime.title.english || anime.title.romaji;
     const cover = anime.bannerImage || anime.coverImage.extraLarge;
 
-    // TODO: Handle Continue Watching update here or via client side effect (prefer client side for Auth context access)
-
     if (streams.length === 0) {
         return (
             <div className="flex h-screen items-center justify-center flex-col gap-4 text-white bg-black">
@@ -85,7 +83,17 @@ export default async function WatchPage({ params }: PageProps) {
                     type="tv"
                     autoPlay
                     className="w-full h-full"
-                    anime={anime}
+                    anime={{
+                        id: anime.id,
+                        idMal: anime.idMal,
+                        title: anime.title,
+                        coverImage: anime.coverImage,
+                        bannerImage: anime.bannerImage,
+                        episodes: anime.episodes,
+                        type: "ANIME",
+                        genres: anime.genres,
+                        status: anime.status
+                    }}
                     intro={skipTimes?.op}
                     outro={skipTimes?.ed}
                 />
